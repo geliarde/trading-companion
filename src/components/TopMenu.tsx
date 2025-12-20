@@ -1,4 +1,4 @@
-import { Activity, Bell, Settings, BarChart3, Layers, Clock, ChevronDown } from 'lucide-react';
+import { Activity, Bell, Settings, BarChart3, Layers, Clock, ChevronDown, List } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
   DropdownMenu,
@@ -13,6 +13,7 @@ interface TopMenuProps {
   chartType: string;
   onTimeframeChange: (tf: string) => void;
   onChartTypeChange: (type: string) => void;
+  onOpenWatchlist?: () => void;
 }
 
 const timeframes = [
@@ -37,12 +38,21 @@ export function TopMenu({
   timeframe, 
   chartType, 
   onTimeframeChange, 
-  onChartTypeChange 
+  onChartTypeChange,
+  onOpenWatchlist,
 }: TopMenuProps) {
   return (
     <header className="flex items-center justify-between h-12 px-4 border-b border-border bg-card/80 backdrop-blur-sm">
       {/* Logo */}
       <div className="flex items-center gap-3">
+        <button
+          type="button"
+          onClick={onOpenWatchlist}
+          className="md:hidden p-2 -ml-2 hover:bg-secondary rounded-lg transition-colors"
+          aria-label="Abrir watchlist"
+        >
+          <List className="h-4 w-4 text-muted-foreground" />
+        </button>
         <div className="relative">
           <Activity className="h-6 w-6 text-primary" />
         </div>
