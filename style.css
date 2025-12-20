@@ -1,0 +1,67 @@
+
+body { 
+  font-family: 'Inter', sans-serif; 
+  background-color: #020617; 
+  color: #f8fafc; 
+  margin: 0;
+  padding: 0;
+  overflow-x: hidden;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* Ajuste para áreas seguras (Notch de iPhones/Tablets) */
+@supports (padding-top: env(safe-area-inset-top)) {
+  body {
+    padding-top: env(safe-area-inset-top);
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+}
+
+.glass { 
+  background: rgba(15, 23, 42, 0.8); 
+  backdrop-filter: blur(12px); 
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+@keyframes fadeIn { 
+  from { opacity: 0; transform: translateY(10px); } 
+  to { opacity: 1; transform: translateY(0); } 
+}
+
+.animate-fade-in { 
+  animation: fadeIn 0.4s ease-out forwards; 
+}
+
+/* Custom Scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+}
+::-webkit-scrollbar-track {
+  background: #020617;
+}
+::-webkit-scrollbar-thumb {
+  background: #1e293b;
+  border-radius: 10px;
+}
+
+/* Efeito de clique nos botões */
+button:active {
+  transform: scale(0.95);
+}
+
+input[type="range"] {
+  height: 6px;
+  -webkit-appearance: none;
+  background: #1e293b;
+  border-radius: 5px;
+}
+
+input[type="range"]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 18px;
+  height: 18px;
+  background: #3b82f6;
+  border-radius: 50%;
+  cursor: pointer;
+}

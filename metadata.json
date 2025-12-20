@@ -1,0 +1,10 @@
+
+{
+  "name": "Ukulele Studio Pro",
+  "short_name": "UkeStudio",
+  "description": "App profissional de Ukulele com gerador de acordes, afinador de precisão, metrônomo e coach de IA.",
+  "requestFramePermissions": [
+    "microphone",
+    "camera"
+  ]
+}
