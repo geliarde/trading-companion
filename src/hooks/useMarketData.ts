@@ -50,7 +50,7 @@ function normalizeCryptoTicker(ticker: string): string {
   return t;
 }
 
-export function useMarketData(portfolio: Asset[]) {
+export function useMarketData(portfolio: Asset[], focusedTicker?: string | null) {
   const { toast } = useToast();
   const [protectionMode, setProtectionMode] = useState(false);
   const [isOnline, setIsOnline] = useState<boolean>(typeof navigator !== "undefined" ? navigator.onLine : true);
@@ -113,6 +113,7 @@ export function useMarketData(portfolio: Asset[]) {
     queries: tickers.map((ticker) => {
       const isCrypto = isCryptoTicker(ticker);
       const normalized = isCrypto ? normalizeCryptoTicker(ticker) : ticker;
+      const isFocused = Boolean(focusedTicker) && ticker === focusedTicker;
       return {
         queryKey: ["bars", normalized, isCrypto ? "coingecko" : "brapi"],
         queryFn: async () => {
@@ -121,8 +122,9 @@ export function useMarketData(portfolio: Asset[]) {
         },
         enabled: Boolean(normalized),
         // Free sources: reduce pressure. Techs from daily bars don't need tight polling.
-        refetchInterval: isCrypto ? 120_000 : 180_000,
-        staleTime: isCrypto ? 110_000 : 170_000,
+        // When switching tickers, prioritize the focused one.
+        refetchInterval: isCrypto ? (isFocused ? 60_000 : 120_000) : (isFocused ? 120_000 : 180_000),
+        staleTime: isCrypto ? (isFocused ? 55_000 : 110_000) : (isFocused ? 110_000 : 170_000),
         retry: 1,
       };
     }),

@@ -180,8 +180,8 @@ export function TradingChart({
       </div>
 
       {/* Chart Area */}
-      <div className="flex-1 p-4">
-        <ResponsiveContainer width="100%" height="100%">
+      <div className="flex-1 min-h-0 p-4">
+        <ResponsiveContainer width="100%" height="100%" debounce={120}>
           <ComposedChart data={candleData} margin={{ top: 10, right: 30, left: 0, bottom: 0 }}>
             <XAxis 
               dataKey="date" 
