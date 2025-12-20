@@ -29,6 +29,21 @@ type LiveAssetPatch = Partial<
   >
 >;
 
+export type DataFeedStatus = "ok" | "stale" | "degraded" | "offline";
+
+export type TickerFeedHealth = {
+  source: "brapi" | "coingecko";
+  status: DataFeedStatus;
+  lastUpdatedAt: number | null;
+  message?: string;
+};
+
+export type MarketDataHealth = {
+  overall: DataFeedStatus;
+  macro: TickerFeedHealth;
+  assets: Record<string, TickerFeedHealth>;
+};
+
 function normalizeCryptoTicker(ticker: string): string {
   const t = ticker.toUpperCase();
   if (t === "SOLANA") return "SOL";
@@ -38,6 +53,7 @@ function normalizeCryptoTicker(ticker: string): string {
 export function useMarketData(portfolio: Asset[]) {
   const { toast } = useToast();
   const [protectionMode, setProtectionMode] = useState(false);
+  const [isOnline, setIsOnline] = useState<boolean>(typeof navigator !== "undefined" ? navigator.onLine : true);
 
   // Macro (USDT/BRL + BTC) via CoinGecko
   const macroQuery = useQuery({
@@ -45,6 +61,7 @@ export function useMarketData(portfolio: Asset[]) {
     queryFn: fetchCoinGeckoMacro,
     refetchInterval: 30_000,
     staleTime: 25_000,
+    retry: 1,
   });
 
   const macro = (macroQuery.data ??
@@ -54,6 +71,17 @@ export function useMarketData(portfolio: Asset[]) {
     } satisfies MacroState)) as MacroState;
 
   const lastMacroAlertRef = useRef<{ usdt: boolean; btc: boolean }>({ usdt: false, btc: false });
+
+  useEffect(() => {
+    const onOnline = () => setIsOnline(true);
+    const onOffline = () => setIsOnline(false);
+    window.addEventListener("online", onOnline);
+    window.addEventListener("offline", onOffline);
+    return () => {
+      window.removeEventListener("online", onOnline);
+      window.removeEventListener("offline", onOffline);
+    };
+  }, []);
 
   useEffect(() => {
     const usdtRisk = macro["USDT/BRL"].changePercent > 1;
@@ -110,10 +138,65 @@ export function useMarketData(portfolio: Asset[]) {
     return out;
   }, [liveQueries, tickers]);
 
+  const health = useMemo<MarketDataHealth>(() => {
+    const now = Date.now();
+    const staleAfterMs = 10 * 60 * 1000;
+
+    const macroHealth: TickerFeedHealth = {
+      source: "coingecko",
+      status: "ok",
+      lastUpdatedAt: macroQuery.dataUpdatedAt ? macroQuery.dataUpdatedAt : null,
+    };
+
+    if (!isOnline) {
+      macroHealth.status = "offline";
+      macroHealth.message = "Sem conexão (offline)";
+    } else if (macroQuery.isError) {
+      macroHealth.status = macroQuery.data ? "degraded" : "degraded";
+      macroHealth.message = "Falha ao atualizar macro (cache em uso)";
+    } else if (macroHealth.lastUpdatedAt && now - macroHealth.lastUpdatedAt > staleAfterMs) {
+      macroHealth.status = "stale";
+      macroHealth.message = "Macro desatualizado (cache)";
+    }
+
+    const assetHealth: Record<string, TickerFeedHealth> = {};
+    for (let i = 0; i < tickers.length; i += 1) {
+      const ticker = tickers[i];
+      const q = liveQueries[i];
+      const src: "brapi" | "coingecko" = isCryptoTicker(ticker) ? "coingecko" : "brapi";
+
+      const lastUpdatedAt = q?.dataUpdatedAt ? q.dataUpdatedAt : null;
+      let status: DataFeedStatus = "ok";
+      let message: string | undefined;
+
+      if (!isOnline) {
+        status = "offline";
+        message = "Sem conexão (offline)";
+      } else if (q?.isError) {
+        status = q.data ? "degraded" : "degraded";
+        message = "Falha ao atualizar (cache em uso)";
+      } else if (lastUpdatedAt && now - lastUpdatedAt > staleAfterMs) {
+        status = "stale";
+        message = "Desatualizado (cache)";
+      }
+
+      assetHealth[ticker] = { source: src, status, lastUpdatedAt, message };
+    }
+
+    const statuses = [macroHealth.status, ...Object.values(assetHealth).map((a) => a.status)];
+    let overall: DataFeedStatus = "ok";
+    if (statuses.includes("offline")) overall = "offline";
+    else if (statuses.includes("degraded")) overall = "degraded";
+    else if (statuses.includes("stale")) overall = "stale";
+
+    return { overall, macro: macroHealth, assets: assetHealth };
+  }, [isOnline, liveQueries, macroQuery.data, macroQuery.dataUpdatedAt, macroQuery.isError, tickers]);
+
   return {
     macro,
     protectionMode,
     liveByTicker,
+    health,
   };
 }
 

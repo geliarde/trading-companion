@@ -11,6 +11,7 @@ import { Button } from '@/components/ui/button';
 import { Minimize2 } from 'lucide-react';
 import { MobileChartDock, type ChartIndicators } from '@/components/MobileChartDock';
 import { RiskBanner } from '@/components/RiskBanner';
+import { DataStatusBanner } from '@/components/DataStatusBanner';
 import { SummaryTable } from '@/components/SummaryTable';
 import { NewsAlerts } from '@/components/NewsAlerts';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -19,7 +20,7 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 
 const Index = () => {
   const { portfolio, news, addTicker, removeTicker, updateQuantity } = usePortfolio();
-  const { liveByTicker, macro, protectionMode } = useMarketData(portfolio);
+  const { liveByTicker, macro, protectionMode, health } = useMarketData(portfolio);
   const [watchlistOpen, setWatchlistOpen] = useState(false);
   const [activeTool, setActiveTool] = useState<Tool>('cursor');
   const [indicators, setIndicators] = useState<ChartIndicators>({
@@ -193,7 +194,10 @@ const Index = () => {
             <div className="flex-1 min-h-0 min-w-0 flex flex-col p-2 overflow-hidden">
               {!isFullscreen && (
                 <div className="mb-2">
+              <div className="grid gap-2">
+                <DataStatusBanner health={health} />
                   <RiskBanner macro={macro} protectionMode={protectionMode} />
+              </div>
                 </div>
               )}
               <TradingChart
@@ -252,6 +256,9 @@ const Index = () => {
                   </TabsContent>
                   <TabsContent value="risk" className="h-full m-0">
                     <ScrollArea className="h-full">
+                      <div className="grid gap-3 mb-3">
+                        <DataStatusBanner health={health} />
+                      </div>
                       {riskTabContent}
                     </ScrollArea>
                   </TabsContent>
