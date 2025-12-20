@@ -1,18 +1,8 @@
-import { useEffect, useMemo, useState, useCallback } from 'react';
+import { useState, useCallback } from 'react';
 import { Asset, NewsAlert } from '@/types/trading';
 import { mockAssets, mockNews } from '@/data/mockData';
 import { useToast } from '@/hooks/use-toast';
 import { ema, findSupportResistance, generateSyntheticOHLC, rsi } from '@/utils/indicators';
-
-type MacroSymbol = 'USDT/BRL' | 'BTC';
-
-export type MacroState = Record<
-  MacroSymbol,
-  {
-    price: number;
-    changePercent: number;
-  }
->;
 
 const OIL_KEYWORDS = ['petróleo', 'brent', 'opec', 'petrobras', 'gasolina', 'diesel'];
 const IRON_KEYWORDS = ['minério', 'ferro', 'iron ore', 'china'];
@@ -37,57 +27,7 @@ function isRelevantToSectors(text: string): boolean {
 export function usePortfolio() {
   const [portfolio, setPortfolio] = useState<Asset[]>(mockAssets);
   const [news, setNews] = useState<NewsAlert[]>(mockNews);
-  const [macro, setMacro] = useState<MacroState>({
-    'USDT/BRL': { price: 5.0, changePercent: 0 },
-    BTC: { price: 350000, changePercent: 0 },
-  });
-  const [protectionMode, setProtectionMode] = useState(false);
   const { toast } = useToast();
-
-  // Simulated macro feed + alerts
-  useEffect(() => {
-    const id = window.setInterval(() => {
-      setMacro((prev) => {
-        const next: MacroState = { ...prev };
-
-        // USDT/BRL: small drift with occasional spikes
-        {
-          const p = prev['USDT/BRL'].price;
-          const shock = Math.random() < 0.08 ? (Math.random() - 0.3) * 0.03 : (Math.random() - 0.5) * 0.004;
-          const newP = Math.max(3, p * (1 + shock));
-          const chg = ((newP - p) / p) * 100;
-          next['USDT/BRL'] = { price: newP, changePercent: chg };
-          if (chg > 1) {
-            toast({
-              title: 'Alerta Macro: USDT/BRL em alta',
-              description: `USDT/BRL subiu ${chg.toFixed(2)}%. Risco de saída de capital estrangeiro da B3.`,
-            });
-          }
-        }
-
-        // BTC: higher volatility
-        {
-          const p = prev.BTC.price;
-          const shock = Math.random() < 0.06 ? (Math.random() - 0.7) * 0.12 : (Math.random() - 0.5) * 0.02;
-          const newP = Math.max(1000, p * (1 + shock));
-          const chg = ((newP - p) / p) * 100;
-          next.BTC = { price: newP, changePercent: chg };
-          if (chg < -5) {
-            setProtectionMode(true);
-            toast({
-              title: 'Modo de Proteção ativado',
-              description: `Bitcoin caiu ${chg.toFixed(2)}%. Sugestão: apertar stop loss em todos os ativos.`,
-              variant: 'destructive',
-            });
-          }
-        }
-
-        return next;
-      });
-    }, 12000);
-
-    return () => window.clearInterval(id);
-  }, [toast]);
 
   const addTicker = useCallback((ticker: string, name: string, sector: string) => {
     const normalized = normalizeTicker(ticker);
@@ -173,20 +113,11 @@ export function usePortfolio() {
       .filter(n => isRelevantToSectors(`${n.headline} ${n.summary}`));
   }, [portfolio, news]);
 
-  const risk = useMemo(
-    () => ({
-      macro,
-      protectionMode,
-    }),
-    [macro, protectionMode],
-  );
-
   return {
     portfolio,
     news: getFilteredNews(),
     addTicker,
     removeTicker,
     updateQuantity,
-    risk,
   };
 }

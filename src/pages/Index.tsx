@@ -4,6 +4,7 @@ import { AssetList } from '@/components/AssetList';
 import { ChartToolbar } from '@/components/ChartToolbar';
 import { TradingChart } from '@/components/TradingChart';
 import { usePortfolio } from '@/hooks/usePortfolio';
+import { useMarketData } from '@/hooks/useMarketData';
 import { Sheet, SheetContent } from '@/components/ui/sheet';
 import type { Tool } from '@/components/ChartToolbar';
 import { Button } from '@/components/ui/button';
@@ -17,7 +18,8 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { ScrollArea } from '@/components/ui/scroll-area';
 
 const Index = () => {
-  const { portfolio, news, addTicker, removeTicker, updateQuantity, risk } = usePortfolio();
+  const { portfolio, news, addTicker, removeTicker, updateQuantity } = usePortfolio();
+  const { liveByTicker, macro, protectionMode } = useMarketData(portfolio);
   const [watchlistOpen, setWatchlistOpen] = useState(false);
   const [activeTool, setActiveTool] = useState<Tool>('cursor');
   const [indicators, setIndicators] = useState<ChartIndicators>({
@@ -35,7 +37,12 @@ const Index = () => {
   const [isFullscreen, setIsFullscreen] = useState(false);
   const chartAreaRef = useRef<HTMLDivElement | null>(null);
 
-  const selectedAsset = portfolio.find(a => a.ticker === selectedTicker) || null;
+  const portfolioLive = useMemo(
+    () => portfolio.map((a) => ({ ...a, ...(liveByTicker[a.ticker] ?? {}) })),
+    [liveByTicker, portfolio],
+  );
+
+  const selectedAsset = portfolioLive.find(a => a.ticker === selectedTicker) || null;
   const [insightsOpen, setInsightsOpen] = useState(false);
   const [insightsTab, setInsightsTab] = useState<'summary' | 'news' | 'risk'>('summary');
 
@@ -50,8 +57,8 @@ const Index = () => {
   };
 
   const riskTabContent = useMemo(() => {
-    const usd = risk.macro['USDT/BRL'];
-    const btc = risk.macro.BTC;
+    const usd = macro['USDT/BRL'];
+    const btc = macro.BTC;
     return (
       <div className="grid gap-3 text-sm">
         <div className="bg-secondary/40 border border-border rounded-lg p-3">
@@ -79,7 +86,7 @@ const Index = () => {
         <div className="bg-card border border-border rounded-lg p-3">
           <p className="font-mono text-xs uppercase tracking-wider text-muted-foreground mb-2">Status</p>
           <p className="text-sm">
-            {risk.protectionMode ? (
+            {protectionMode ? (
               <span className="text-alert font-mono font-semibold">MODO DE PROTEÇÃO ATIVO</span>
             ) : (
               <span className="text-muted-foreground font-mono">Normal</span>
@@ -88,7 +95,7 @@ const Index = () => {
         </div>
       </div>
     );
-  }, [risk.macro, risk.protectionMode]);
+  }, [macro, protectionMode]);
 
   useEffect(() => {
     const handleFullscreenChange = () => setIsFullscreen(Boolean(document.fullscreenElement));
@@ -127,7 +134,7 @@ const Index = () => {
         {/* Mobile Watchlist Drawer */}
         <SheetContent side="left" className="w-[min(22rem,100vw)] p-0">
           <AssetList
-            portfolio={portfolio}
+            portfolio={portfolioLive}
             selectedTicker={selectedTicker}
             onSelect={(ticker) => {
               setSelectedTicker(ticker);
@@ -145,7 +152,7 @@ const Index = () => {
           {!isFullscreen && (
             <div className="hidden md:block w-56 flex-shrink-0 min-h-0">
               <AssetList
-                portfolio={portfolio}
+                portfolio={portfolioLive}
                 selectedTicker={selectedTicker}
                 onSelect={setSelectedTicker}
                 onAdd={addTicker}
@@ -186,7 +193,7 @@ const Index = () => {
             <div className="flex-1 min-h-0 min-w-0 flex flex-col p-2 overflow-hidden">
               {!isFullscreen && (
                 <div className="mb-2">
-                  <RiskBanner macro={risk.macro} protectionMode={risk.protectionMode} />
+                  <RiskBanner macro={macro} protectionMode={protectionMode} />
                 </div>
               )}
               <TradingChart
@@ -235,7 +242,7 @@ const Index = () => {
                 <div className="flex-1 min-h-0 overflow-hidden mt-3">
                   <TabsContent value="summary" className="h-full m-0">
                     <ScrollArea className="h-full">
-                      <SummaryTable portfolio={portfolio} news={news} protectionMode={risk.protectionMode} />
+                      <SummaryTable portfolio={portfolioLive} news={news} protectionMode={protectionMode} />
                     </ScrollArea>
                   </TabsContent>
                   <TabsContent value="news" className="h-full m-0">

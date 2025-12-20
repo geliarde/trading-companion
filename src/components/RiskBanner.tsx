@@ -1,7 +1,7 @@
 import { AlertCircle, ShieldAlert } from "lucide-react";
 
 import { cn } from "@/lib/utils";
-import type { MacroState } from "@/hooks/usePortfolio";
+import type { MacroState } from "@/services/marketData";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 
 type RiskBannerProps = {
