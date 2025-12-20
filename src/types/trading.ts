@@ -12,6 +12,7 @@ export interface Asset {
   resistance: number;
   volume: number;
   avgVolume: number;
+  quantity?: number;
 }
 
 export interface NewsAlert {

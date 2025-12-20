@@ -15,6 +15,7 @@ export const mockAssets: Asset[] = [
     resistance: 40.00,
     volume: 45200000,
     avgVolume: 38000000,
+    quantity: 100,
   },
   {
     ticker: 'VALE3',
@@ -30,6 +31,7 @@ export const mockAssets: Asset[] = [
     resistance: 66.00,
     volume: 32100000,
     avgVolume: 28000000,
+    quantity: 50,
   },
   {
     ticker: 'WEGE3',
@@ -45,6 +47,7 @@ export const mockAssets: Asset[] = [
     resistance: 47.00,
     volume: 12800000,
     avgVolume: 10500000,
+    quantity: 200,
   },
 ];
 
