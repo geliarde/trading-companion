@@ -92,8 +92,10 @@ export function useMarketData(portfolio: Asset[]) {
           return computeTechnicalsFromBars(bars);
         },
         enabled: Boolean(normalized),
-        refetchInterval: 60_000,
-        staleTime: 55_000,
+        // Free sources: reduce pressure. Techs from daily bars don't need tight polling.
+        refetchInterval: isCrypto ? 120_000 : 180_000,
+        staleTime: isCrypto ? 110_000 : 170_000,
+        retry: 1,
       };
     }),
   });
