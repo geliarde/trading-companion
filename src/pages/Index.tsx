@@ -1,33 +1,59 @@
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { TopMenu } from '@/components/TopMenu';
 import { AssetList } from '@/components/AssetList';
 import { ChartToolbar } from '@/components/ChartToolbar';
 import { TradingChart } from '@/components/TradingChart';
 import { usePortfolio } from '@/hooks/usePortfolio';
 import { Sheet, SheetContent } from '@/components/ui/sheet';
+import type { Tool } from '@/components/ChartToolbar';
+import { Button } from '@/components/ui/button';
+import { Minimize2 } from 'lucide-react';
 
 const Index = () => {
   const { portfolio, addTicker, removeTicker, updateQuantity } = usePortfolio();
   const [watchlistOpen, setWatchlistOpen] = useState(false);
+  const [activeTool, setActiveTool] = useState<Tool>('cursor');
   const [selectedTicker, setSelectedTicker] = useState<string | null>(
     portfolio.length > 0 ? portfolio[0].ticker : null
   );
   const [timeframe, setTimeframe] = useState('1D');
   const [chartType, setChartType] = useState('candles');
+  const [isFullscreen, setIsFullscreen] = useState(false);
+  const chartAreaRef = useRef<HTMLDivElement | null>(null);
 
   const selectedAsset = portfolio.find(a => a.ticker === selectedTicker) || null;
+
+  useEffect(() => {
+    const handleFullscreenChange = () => setIsFullscreen(Boolean(document.fullscreenElement));
+    document.addEventListener('fullscreenchange', handleFullscreenChange);
+    return () => document.removeEventListener('fullscreenchange', handleFullscreenChange);
+  }, []);
+
+  const handleToggleFullscreen = async () => {
+    try {
+      if (document.fullscreenElement) {
+        await document.exitFullscreen();
+      } else {
+        await chartAreaRef.current?.requestFullscreen?.();
+      }
+    } catch {
+      // Ignore (fullscreen may be blocked by browser / device policy)
+    }
+  };
 
   return (
     <Sheet open={watchlistOpen} onOpenChange={setWatchlistOpen}>
       <div className="h-[100dvh] w-full min-h-0 flex flex-col bg-background overflow-hidden">
         {/* Top Menu */}
-        <TopMenu
-          timeframe={timeframe}
-          chartType={chartType}
-          onTimeframeChange={setTimeframe}
-          onChartTypeChange={setChartType}
-          onOpenWatchlist={() => setWatchlistOpen(true)}
-        />
+        {!isFullscreen && (
+          <TopMenu
+            timeframe={timeframe}
+            chartType={chartType}
+            onTimeframeChange={setTimeframe}
+            onChartTypeChange={setChartType}
+            onOpenWatchlist={() => setWatchlistOpen(true)}
+          />
+        )}
 
         {/* Mobile Watchlist Drawer */}
         <SheetContent side="left" className="w-[min(22rem,100vw)] p-0">
@@ -47,27 +73,76 @@ const Index = () => {
         {/* Main Content */}
         <div className="flex-1 min-h-0 min-w-0 flex overflow-hidden">
           {/* Left Sidebar - Asset List (desktop) */}
-          <div className="hidden md:block w-56 flex-shrink-0 min-h-0">
-            <AssetList
-              portfolio={portfolio}
-              selectedTicker={selectedTicker}
-              onSelect={setSelectedTicker}
-              onAdd={addTicker}
-              onRemove={removeTicker}
-              onUpdateQuantity={updateQuantity}
-            />
-          </div>
+          {!isFullscreen && (
+            <div className="hidden md:block w-56 flex-shrink-0 min-h-0">
+              <AssetList
+                portfolio={portfolio}
+                selectedTicker={selectedTicker}
+                onSelect={setSelectedTicker}
+                onAdd={addTicker}
+                onRemove={removeTicker}
+                onUpdateQuantity={updateQuantity}
+              />
+            </div>
+          )}
 
           {/* Chart Toolbar (desktop) */}
-          <div className="hidden md:flex min-h-0 overflow-hidden">
-            <ChartToolbar />
-          </div>
+          {!isFullscreen && (
+            <div className="hidden md:flex min-h-0 overflow-hidden">
+              <ChartToolbar
+                activeTool={activeTool}
+                onActiveToolChange={setActiveTool}
+                onFullscreen={handleToggleFullscreen}
+              />
+            </div>
+          )}
 
           {/* Main Chart Area */}
-          <div className="flex-1 min-w-0 min-h-0 flex flex-col p-2 overflow-hidden">
-            <TradingChart asset={selectedAsset} />
+          <div ref={chartAreaRef} className="relative flex-1 min-w-0 min-h-0 flex flex-col overflow-hidden">
+            {isFullscreen && (
+              <div className="absolute right-2 top-2 z-50">
+                <Button
+                  type="button"
+                  size="icon"
+                  variant="secondary"
+                  className="h-9 w-9 bg-card/80 backdrop-blur border border-border"
+                  onClick={handleToggleFullscreen}
+                  aria-label="Sair da tela cheia"
+                >
+                  <Minimize2 className="h-4 w-4" />
+                </Button>
+              </div>
+            )}
+
+            <div className="flex-1 min-h-0 min-w-0 flex flex-col p-2 overflow-hidden">
+              <TradingChart asset={selectedAsset} />
+            </div>
           </div>
         </div>
+
+        {/* Mobile bottom toolbar */}
+        {!isFullscreen && (
+          <div className="md:hidden h-12 shrink-0">
+            <ChartToolbar
+              orientation="horizontal"
+              activeTool={activeTool}
+              onActiveToolChange={setActiveTool}
+              onFullscreen={handleToggleFullscreen}
+            />
+          </div>
+        )}
+
+        {/* Fullscreen bottom quick actions (mobile/desktop) */}
+        {isFullscreen && (
+          <div className="h-12 shrink-0">
+            <ChartToolbar
+              orientation="horizontal"
+              activeTool={activeTool}
+              onActiveToolChange={setActiveTool}
+              onFullscreen={handleToggleFullscreen}
+            />
+          </div>
+        )}
       </div>
     </Sheet>
   );

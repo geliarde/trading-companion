@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import {
   MousePointer2,
   TrendingUp,
@@ -19,8 +19,9 @@ import {
 } from 'lucide-react';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { Separator } from '@/components/ui/separator';
+import { cn } from '@/lib/utils';
 
-type Tool = 
+export type Tool =
   | 'cursor'
   | 'crosshair'
   | 'trendline'
@@ -67,6 +68,9 @@ const annotationTools: ToolItem[] = [
 ];
 
 interface ChartToolbarProps {
+  orientation?: 'vertical' | 'horizontal';
+  activeTool?: Tool;
+  onActiveToolChange?: (tool: Tool) => void;
   onZoomIn?: () => void;
   onZoomOut?: () => void;
   onReset?: () => void;
@@ -75,148 +79,194 @@ interface ChartToolbarProps {
 }
 
 export function ChartToolbar({ 
+  orientation = 'vertical',
+  activeTool: activeToolProp,
+  onActiveToolChange,
   onZoomIn, 
   onZoomOut, 
   onReset, 
   onClear,
   onFullscreen,
 }: ChartToolbarProps) {
-  const [activeTool, setActiveTool] = useState<Tool>('cursor');
+  const [internalActiveTool, setInternalActiveTool] = useState<Tool>('cursor');
+  const activeTool = activeToolProp ?? internalActiveTool;
+  const setActiveTool = onActiveToolChange ?? setInternalActiveTool;
 
-  const renderToolGroup = (toolGroup: ToolItem[], title?: string) => (
-    <div className="flex flex-col gap-1">
-      {title && (
-        <span className="text-[10px] text-muted-foreground/50 px-2 font-mono uppercase">
-          {title}
-        </span>
-      )}
-      {toolGroup.map((tool) => (
-        <Tooltip key={tool.id}>
-          <TooltipTrigger asChild>
-            <button
-              onClick={() => setActiveTool(tool.id)}
-              className={`
-                p-2 rounded-lg transition-all
-                ${activeTool === tool.id 
-                  ? 'bg-primary text-primary-foreground' 
-                  : 'text-muted-foreground hover:bg-secondary hover:text-foreground'
-                }
-              `}
-            >
-              <tool.icon className="h-4 w-4" />
-            </button>
-          </TooltipTrigger>
-          <TooltipContent side="right" className="font-mono text-xs">
-            {tool.label}
-          </TooltipContent>
-        </Tooltip>
-      ))}
-    </div>
-  );
+  const isHorizontal = orientation === 'horizontal';
 
-  return (
-    <div className="flex flex-col bg-card border-r border-border py-2 px-1 gap-1">
-      {/* Cursor Tools */}
-      {renderToolGroup(tools)}
-      
-      <Separator className="my-1" />
-      
-      {/* Drawing Tools */}
-      {renderToolGroup(drawingTools, 'Linhas')}
-      
-      <Separator className="my-1" />
-      
-      {/* Shape Tools */}
-      {renderToolGroup(shapeTools, 'Formas')}
-      
-      <Separator className="my-1" />
-      
-      {/* Analysis Tools */}
-      {renderToolGroup(analysisTools, 'Análise')}
-      
-      <Separator className="my-1" />
-      
-      {/* Annotation Tools */}
-      {renderToolGroup(annotationTools, 'Anotação')}
-      
-      <div className="flex-1" />
-      
-      {/* Action Buttons */}
-      <Separator className="my-1" />
-      
+  const toolButtonClassName = (isActive: boolean) =>
+    cn(
+      'p-2 rounded-lg transition-all shrink-0',
+      isActive ? 'bg-primary text-primary-foreground' : 'text-muted-foreground hover:bg-secondary hover:text-foreground',
+    );
+
+  const renderToolGroup = (toolGroup: ToolItem[], title?: string) => {
+    if (isHorizontal) {
+      return (
+        <div className="flex items-center gap-1">
+          {toolGroup.map((tool) => (
+            <Tooltip key={tool.id}>
+              <TooltipTrigger asChild>
+                <button
+                  type="button"
+                  onClick={() => setActiveTool(tool.id)}
+                  className={toolButtonClassName(activeTool === tool.id)}
+                >
+                  <tool.icon className="h-4 w-4" />
+                </button>
+              </TooltipTrigger>
+              <TooltipContent side="top" className="font-mono text-xs">
+                {tool.label}
+              </TooltipContent>
+            </Tooltip>
+          ))}
+        </div>
+      );
+    }
+
+    return (
       <div className="flex flex-col gap-1">
+        {title && (
+          <span className="text-[10px] text-muted-foreground/50 px-2 font-mono uppercase">
+            {title}
+          </span>
+        )}
+        {toolGroup.map((tool) => (
+          <Tooltip key={tool.id}>
+            <TooltipTrigger asChild>
+              <button
+                type="button"
+                onClick={() => setActiveTool(tool.id)}
+                className={toolButtonClassName(activeTool === tool.id)}
+              >
+                <tool.icon className="h-4 w-4" />
+              </button>
+            </TooltipTrigger>
+            <TooltipContent side="right" className="font-mono text-xs">
+              {tool.label}
+            </TooltipContent>
+          </Tooltip>
+        ))}
+      </div>
+    );
+  };
+
+  const actionButtons = useMemo(
+    () => (
+      <>
         <Tooltip>
           <TooltipTrigger asChild>
             <button
+              type="button"
               onClick={onZoomIn}
-              className="p-2 rounded-lg text-muted-foreground hover:bg-secondary hover:text-foreground transition-all"
+              className={cn('p-2 rounded-lg transition-all shrink-0', 'text-muted-foreground hover:bg-secondary hover:text-foreground')}
             >
               <ZoomIn className="h-4 w-4" />
             </button>
           </TooltipTrigger>
-          <TooltipContent side="right" className="font-mono text-xs">
+          <TooltipContent side={isHorizontal ? 'top' : 'right'} className="font-mono text-xs">
             Zoom In
           </TooltipContent>
         </Tooltip>
-        
+
         <Tooltip>
           <TooltipTrigger asChild>
             <button
+              type="button"
               onClick={onZoomOut}
-              className="p-2 rounded-lg text-muted-foreground hover:bg-secondary hover:text-foreground transition-all"
+              className={cn('p-2 rounded-lg transition-all shrink-0', 'text-muted-foreground hover:bg-secondary hover:text-foreground')}
             >
               <ZoomOut className="h-4 w-4" />
             </button>
           </TooltipTrigger>
-          <TooltipContent side="right" className="font-mono text-xs">
+          <TooltipContent side={isHorizontal ? 'top' : 'right'} className="font-mono text-xs">
             Zoom Out
           </TooltipContent>
         </Tooltip>
-        
+
         <Tooltip>
           <TooltipTrigger asChild>
             <button
+              type="button"
               onClick={onFullscreen}
-              className="p-2 rounded-lg text-muted-foreground hover:bg-secondary hover:text-foreground transition-all"
+              className={cn('p-2 rounded-lg transition-all shrink-0', 'text-muted-foreground hover:bg-secondary hover:text-foreground')}
             >
               <Maximize2 className="h-4 w-4" />
             </button>
           </TooltipTrigger>
-          <TooltipContent side="right" className="font-mono text-xs">
+          <TooltipContent side={isHorizontal ? 'top' : 'right'} className="font-mono text-xs">
             Tela Cheia
           </TooltipContent>
         </Tooltip>
-        
-        <Separator className="my-1" />
-        
+
         <Tooltip>
           <TooltipTrigger asChild>
             <button
+              type="button"
               onClick={onReset}
-              className="p-2 rounded-lg text-muted-foreground hover:bg-secondary hover:text-foreground transition-all"
+              className={cn('p-2 rounded-lg transition-all shrink-0', 'text-muted-foreground hover:bg-secondary hover:text-foreground')}
             >
               <RotateCcw className="h-4 w-4" />
             </button>
           </TooltipTrigger>
-          <TooltipContent side="right" className="font-mono text-xs">
+          <TooltipContent side={isHorizontal ? 'top' : 'right'} className="font-mono text-xs">
             Resetar
           </TooltipContent>
         </Tooltip>
-        
+
         <Tooltip>
           <TooltipTrigger asChild>
             <button
+              type="button"
               onClick={onClear}
-              className="p-2 rounded-lg text-muted-foreground hover:bg-destructive/20 hover:text-destructive transition-all"
+              className={cn(
+                'p-2 rounded-lg transition-all shrink-0',
+                'text-muted-foreground hover:bg-destructive/20 hover:text-destructive',
+              )}
             >
               <Trash2 className="h-4 w-4" />
             </button>
           </TooltipTrigger>
-          <TooltipContent side="right" className="font-mono text-xs">
+          <TooltipContent side={isHorizontal ? 'top' : 'right'} className="font-mono text-xs">
             Limpar Desenhos
           </TooltipContent>
         </Tooltip>
-      </div>
+      </>
+    ),
+    [isHorizontal, onClear, onFullscreen, onReset, onZoomIn, onZoomOut],
+  );
+
+  return (
+    <div
+      className={cn(
+        isHorizontal
+          ? 'flex h-12 items-center gap-2 bg-card border-t border-border px-2 overflow-x-auto overflow-y-hidden'
+          : 'flex flex-col bg-card border-r border-border py-2 px-1 gap-1',
+      )}
+    >
+      {/* Tools */}
+      {renderToolGroup(tools)}
+      <Separator orientation={isHorizontal ? 'vertical' : 'horizontal'} className={isHorizontal ? 'h-6' : 'my-1'} />
+      {renderToolGroup(drawingTools, isHorizontal ? undefined : 'Linhas')}
+      <Separator orientation={isHorizontal ? 'vertical' : 'horizontal'} className={isHorizontal ? 'h-6' : 'my-1'} />
+      {renderToolGroup(shapeTools, isHorizontal ? undefined : 'Formas')}
+      <Separator orientation={isHorizontal ? 'vertical' : 'horizontal'} className={isHorizontal ? 'h-6' : 'my-1'} />
+      {renderToolGroup(analysisTools, isHorizontal ? undefined : 'Análise')}
+      <Separator orientation={isHorizontal ? 'vertical' : 'horizontal'} className={isHorizontal ? 'h-6' : 'my-1'} />
+      {renderToolGroup(annotationTools, isHorizontal ? undefined : 'Anotação')}
+
+      {isHorizontal ? (
+        <>
+          <Separator orientation="vertical" className="h-6" />
+          <div className="flex items-center gap-1">{actionButtons}</div>
+        </>
+      ) : (
+        <>
+          <div className="flex-1" />
+          <Separator className="my-1" />
+          <div className="flex flex-col gap-1">{actionButtons}</div>
+        </>
+      )}
     </div>
   );
 }
