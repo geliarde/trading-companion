@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { TopMenu } from '@/components/TopMenu';
 import { AssetList } from '@/components/AssetList';
 import { ChartToolbar } from '@/components/ChartToolbar';
@@ -9,9 +9,15 @@ import type { Tool } from '@/components/ChartToolbar';
 import { Button } from '@/components/ui/button';
 import { Minimize2 } from 'lucide-react';
 import { MobileChartDock, type ChartIndicators } from '@/components/MobileChartDock';
+import { RiskBanner } from '@/components/RiskBanner';
+import { SummaryTable } from '@/components/SummaryTable';
+import { NewsAlerts } from '@/components/NewsAlerts';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { ScrollArea } from '@/components/ui/scroll-area';
 
 const Index = () => {
-  const { portfolio, addTicker, removeTicker, updateQuantity } = usePortfolio();
+  const { portfolio, news, addTicker, removeTicker, updateQuantity, risk } = usePortfolio();
   const [watchlistOpen, setWatchlistOpen] = useState(false);
   const [activeTool, setActiveTool] = useState<Tool>('cursor');
   const [indicators, setIndicators] = useState<ChartIndicators>({
@@ -30,6 +36,59 @@ const Index = () => {
   const chartAreaRef = useRef<HTMLDivElement | null>(null);
 
   const selectedAsset = portfolio.find(a => a.ticker === selectedTicker) || null;
+  const [insightsOpen, setInsightsOpen] = useState(false);
+  const [insightsTab, setInsightsTab] = useState<'summary' | 'news' | 'risk'>('summary');
+
+  const openSummary = () => {
+    setInsightsTab('summary');
+    setInsightsOpen(true);
+  };
+
+  const openNews = () => {
+    setInsightsTab('news');
+    setInsightsOpen(true);
+  };
+
+  const riskTabContent = useMemo(() => {
+    const usd = risk.macro['USDT/BRL'];
+    const btc = risk.macro.BTC;
+    return (
+      <div className="grid gap-3 text-sm">
+        <div className="bg-secondary/40 border border-border rounded-lg p-3">
+          <div className="flex items-center justify-between">
+            <span className="font-mono">USDT/BRL</span>
+            <span className="font-mono">
+              {usd.price.toFixed(3)} ({usd.changePercent >= 0 ? '+' : ''}{usd.changePercent.toFixed(2)}%)
+            </span>
+          </div>
+          <p className="text-xs text-muted-foreground mt-1">
+            Se subir &gt; 1%: risco de saída de capital estrangeiro (B3).
+          </p>
+        </div>
+        <div className="bg-secondary/40 border border-border rounded-lg p-3">
+          <div className="flex items-center justify-between">
+            <span className="font-mono">BTC</span>
+            <span className="font-mono">
+              {btc.price.toFixed(0)} ({btc.changePercent >= 0 ? '+' : ''}{btc.changePercent.toFixed(2)}%)
+            </span>
+          </div>
+          <p className="text-xs text-muted-foreground mt-1">
+            Se cair &lt; -5%: ativa Modo de Proteção e sugere apertar stops.
+          </p>
+        </div>
+        <div className="bg-card border border-border rounded-lg p-3">
+          <p className="font-mono text-xs uppercase tracking-wider text-muted-foreground mb-2">Status</p>
+          <p className="text-sm">
+            {risk.protectionMode ? (
+              <span className="text-alert font-mono font-semibold">MODO DE PROTEÇÃO ATIVO</span>
+            ) : (
+              <span className="text-muted-foreground font-mono">Normal</span>
+            )}
+          </p>
+        </div>
+      </div>
+    );
+  }, [risk.macro, risk.protectionMode]);
 
   useEffect(() => {
     const handleFullscreenChange = () => setIsFullscreen(Boolean(document.fullscreenElement));
@@ -60,6 +119,8 @@ const Index = () => {
             onTimeframeChange={setTimeframe}
             onChartTypeChange={setChartType}
             onOpenWatchlist={() => setWatchlistOpen(true)}
+            onOpenSummary={openSummary}
+            onOpenNews={openNews}
           />
         )}
 
@@ -123,6 +184,11 @@ const Index = () => {
             )}
 
             <div className="flex-1 min-h-0 min-w-0 flex flex-col p-2 overflow-hidden">
+              {!isFullscreen && (
+                <div className="mb-2">
+                  <RiskBanner macro={risk.macro} protectionMode={risk.protectionMode} />
+                </div>
+              )}
               <TradingChart
                 asset={selectedAsset}
                 showSupport={indicators.support}
@@ -143,6 +209,8 @@ const Index = () => {
           onIndicatorsChange={setIndicators}
           onFullscreen={handleToggleFullscreen}
           isFullscreen={isFullscreen}
+          onOpenSummary={openSummary}
+          onOpenNews={openNews}
         />
 
         {/* Desktop fullscreen quick actions */}
@@ -151,6 +219,40 @@ const Index = () => {
             <ChartToolbar orientation="horizontal" sections={['actions']} onFullscreen={handleToggleFullscreen} />
           </div>
         )}
+
+        <Dialog open={insightsOpen} onOpenChange={setInsightsOpen}>
+          <DialogContent className="w-[min(1100px,96vw)] max-h-[90dvh] p-0 overflow-hidden bg-card border-border">
+            <DialogHeader className="p-4 border-b border-border">
+              <DialogTitle className="font-mono text-sm uppercase tracking-wider">Painel</DialogTitle>
+            </DialogHeader>
+            <div className="p-4 pt-3 h-[calc(90dvh-56px)] min-h-0 overflow-hidden">
+              <Tabs value={insightsTab} onValueChange={(v) => setInsightsTab(v as typeof insightsTab)} className="h-full flex flex-col">
+                <TabsList className="w-full justify-start">
+                  <TabsTrigger value="summary" className="font-mono text-xs">Resumo</TabsTrigger>
+                  <TabsTrigger value="news" className="font-mono text-xs">Notícias</TabsTrigger>
+                  <TabsTrigger value="risk" className="font-mono text-xs">Risco</TabsTrigger>
+                </TabsList>
+                <div className="flex-1 min-h-0 overflow-hidden mt-3">
+                  <TabsContent value="summary" className="h-full m-0">
+                    <ScrollArea className="h-full">
+                      <SummaryTable portfolio={portfolio} news={news} protectionMode={risk.protectionMode} />
+                    </ScrollArea>
+                  </TabsContent>
+                  <TabsContent value="news" className="h-full m-0">
+                    <ScrollArea className="h-full">
+                      <NewsAlerts news={news} />
+                    </ScrollArea>
+                  </TabsContent>
+                  <TabsContent value="risk" className="h-full m-0">
+                    <ScrollArea className="h-full">
+                      {riskTabContent}
+                    </ScrollArea>
+                  </TabsContent>
+                </div>
+              </Tabs>
+            </div>
+          </DialogContent>
+        </Dialog>
       </div>
     </Sheet>
   );

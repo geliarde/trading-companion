@@ -104,9 +104,12 @@ export const availableTickers = [
   { ticker: 'BTC', name: 'Bitcoin', sector: 'Cripto' },
   { ticker: 'ETH', name: 'Ethereum', sector: 'Cripto' },
   { ticker: 'SOL', name: 'Solana', sector: 'Cripto' },
+  { ticker: 'SOLANA', name: 'Solana', sector: 'Cripto' },
   { ticker: 'BNB', name: 'Binance Coin', sector: 'Cripto' },
   { ticker: 'XRP', name: 'Ripple', sector: 'Cripto' },
   { ticker: 'ADA', name: 'Cardano', sector: 'Cripto' },
   { ticker: 'DOGE', name: 'Dogecoin', sector: 'Cripto' },
   { ticker: 'MATIC', name: 'Polygon', sector: 'Cripto' },
+  // Macro / FX
+  { ticker: 'USDT/BRL', name: 'Dólar Digital (USDT/BRL)', sector: 'Macro' },
 ];

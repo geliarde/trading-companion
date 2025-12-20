@@ -1,4 +1,4 @@
-import { Activity, Bell, Settings, BarChart3, Layers, Clock, ChevronDown, List } from 'lucide-react';
+import { Activity, Bell, Settings, BarChart3, Layers, Clock, ChevronDown, List, FileText, Newspaper } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
   DropdownMenu,
@@ -14,6 +14,8 @@ interface TopMenuProps {
   onTimeframeChange: (tf: string) => void;
   onChartTypeChange: (type: string) => void;
   onOpenWatchlist?: () => void;
+  onOpenSummary?: () => void;
+  onOpenNews?: () => void;
 }
 
 const timeframes = [
@@ -40,6 +42,8 @@ export function TopMenu({
   onTimeframeChange, 
   onChartTypeChange,
   onOpenWatchlist,
+  onOpenSummary,
+  onOpenNews,
 }: TopMenuProps) {
   return (
     <header className="flex items-center justify-between h-12 px-4 border-b border-border bg-card/80 backdrop-blur-sm">
@@ -134,6 +138,29 @@ export function TopMenu({
 
       {/* Right Controls */}
       <div className="flex items-center gap-2">
+        <div className="hidden md:flex items-center gap-2">
+          <Button
+            type="button"
+            variant="ghost"
+            size="sm"
+            className="gap-2 font-mono text-xs"
+            onClick={onOpenSummary}
+          >
+            <FileText className="h-4 w-4" />
+            <span>Resumo</span>
+          </Button>
+          <Button
+            type="button"
+            variant="ghost"
+            size="sm"
+            className="gap-2 font-mono text-xs"
+            onClick={onOpenNews}
+          >
+            <Newspaper className="h-4 w-4" />
+            <span>Notícias</span>
+          </Button>
+        </div>
+
         <div className="hidden md:flex items-center gap-2 text-xs font-mono text-muted-foreground">
           <div className="w-2 h-2 rounded-full bg-primary animate-pulse" />
           <span>MERCADO ABERTO</span>

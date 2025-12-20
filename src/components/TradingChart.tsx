@@ -210,12 +210,33 @@ export function TradingChart({
                 name.charAt(0).toUpperCase() + name.slice(1)
               ]}
             />
-            {showSupport && (
-              <ReferenceLine y={asset.support} stroke="hsl(0, 72%, 51%)" strokeDasharray="3 3" />
-            )}
-            {showResistance && (
-              <ReferenceLine y={asset.resistance} stroke="hsl(142, 76%, 45%)" strokeDasharray="3 3" />
-            )}
+            {showSupport &&
+              (asset.supportLevels?.length
+                ? asset.supportLevels.slice(0, 2).map((lvl, idx) => (
+                    <ReferenceLine
+                      key={`support-${idx}`}
+                      y={lvl}
+                      stroke="hsl(0, 72%, 51%)"
+                      strokeDasharray={idx === 0 ? '3 3' : '2 6'}
+                    />
+                  ))
+                : (
+                    <ReferenceLine y={asset.support} stroke="hsl(0, 72%, 51%)" strokeDasharray="3 3" />
+                  ))}
+
+            {showResistance &&
+              (asset.resistanceLevels?.length
+                ? asset.resistanceLevels.slice(0, 2).map((lvl, idx) => (
+                    <ReferenceLine
+                      key={`resistance-${idx}`}
+                      y={lvl}
+                      stroke="hsl(142, 76%, 45%)"
+                      strokeDasharray={idx === 0 ? '3 3' : '2 6'}
+                    />
+                  ))
+                : (
+                    <ReferenceLine y={asset.resistance} stroke="hsl(142, 76%, 45%)" strokeDasharray="3 3" />
+                  ))}
             {showEma20 && (
               <ReferenceLine y={asset.ema20} stroke="hsl(199, 89%, 48%)" strokeDasharray="5 5" />
             )}

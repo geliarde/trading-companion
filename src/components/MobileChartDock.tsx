@@ -22,6 +22,8 @@ type MobileChartDockProps = {
   onIndicatorsChange: (next: ChartIndicators) => void;
   onFullscreen?: () => void;
   isFullscreen?: boolean;
+  onOpenSummary?: () => void;
+  onOpenNews?: () => void;
 };
 
 function DockTabButton({
@@ -75,6 +77,8 @@ export function MobileChartDock({
   onIndicatorsChange,
   onFullscreen,
   isFullscreen = false,
+  onOpenSummary,
+  onOpenNews,
 }: MobileChartDockProps) {
   const [tab, setTab] = useState<DockTab | null>(null);
 
@@ -105,6 +109,22 @@ export function MobileChartDock({
       return (
         <div className="px-2 pb-2">
           <ChartToolbar orientation="horizontal" sections={["actions"]} onFullscreen={onFullscreen} />
+          <div className="px-2 pt-2 grid grid-cols-2 gap-2">
+            <button
+              type="button"
+              onClick={onOpenSummary}
+              className="h-10 rounded-lg bg-secondary hover:bg-secondary/80 transition-colors text-sm font-mono"
+            >
+              Resumo
+            </button>
+            <button
+              type="button"
+              onClick={onOpenNews}
+              className="h-10 rounded-lg bg-secondary hover:bg-secondary/80 transition-colors text-sm font-mono"
+            >
+              Notícias
+            </button>
+          </div>
         </div>
       );
     }
@@ -140,7 +160,7 @@ export function MobileChartDock({
         </div>
       </div>
     );
-  }, [activeTool, indicators, onActiveToolChange, onFullscreen, onIndicatorsChange, tab]);
+  }, [activeTool, indicators, onActiveToolChange, onFullscreen, onIndicatorsChange, onOpenNews, onOpenSummary, tab]);
 
   const handleToggleTab = (next: DockTab) => {
     setTab((current) => (current === next ? null : next));

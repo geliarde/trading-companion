@@ -44,6 +44,19 @@ export function AssetList({
          t.name.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
+  const manualTicker = searchQuery.trim().toUpperCase();
+  const canAddManual =
+    manualTicker.length >= 2 &&
+    !availableToAdd.some((t) => t.ticker.toUpperCase() === manualTicker) &&
+    !portfolio.some((p) => p.ticker.toUpperCase() === manualTicker);
+
+  const guessSector = (t: string) => {
+    if (['BTC', 'ETH', 'SOL', 'SOLANA', 'BNB', 'XRP', 'ADA', 'DOGE', 'MATIC'].includes(t)) return 'Cripto';
+    if (t === 'USDT/BRL' || t === 'USDTBRL') return 'Macro';
+    if (t.endsWith('3') || t.endsWith('4')) return 'Ações';
+    return 'Custom';
+  };
+
   const handleEditStart = (ticker: string, currentQty: number, e: React.MouseEvent) => {
     e.stopPropagation();
     setEditingTicker(ticker);
@@ -97,29 +110,69 @@ export function AssetList({
               <ScrollArea className="h-[300px]">
                 <div className="grid gap-2 py-2">
                   {filteredAvailable.length === 0 ? (
-                    <p className="text-muted-foreground text-sm text-center py-4">
-                      Nenhum ativo encontrado.
-                    </p>
+                    <div className="grid gap-2">
+                      <p className="text-muted-foreground text-sm text-center py-2">
+                        Nenhum ativo encontrado.
+                      </p>
+                      {canAddManual && (
+                        <button
+                          onClick={() => {
+                            onAdd(manualTicker, manualTicker, guessSector(manualTicker));
+                            setOpen(false);
+                            setSearchQuery('');
+                          }}
+                          className="flex items-center justify-between p-3 rounded-lg bg-secondary hover:bg-secondary/80 transition-colors text-left"
+                        >
+                          <div>
+                            <p className="font-mono font-semibold">Adicionar {manualTicker}</p>
+                            <p className="text-sm text-muted-foreground">Criar ativo com indicadores automáticos</p>
+                          </div>
+                          <span className="text-xs text-muted-foreground bg-muted px-2 py-1 rounded">
+                            {guessSector(manualTicker)}
+                          </span>
+                        </button>
+                      )}
+                    </div>
                   ) : (
-                    filteredAvailable.map(ticker => (
-                      <button
-                        key={ticker.ticker}
-                        onClick={() => {
-                          onAdd(ticker.ticker, ticker.name, ticker.sector);
-                          setOpen(false);
-                          setSearchQuery('');
-                        }}
-                        className="flex items-center justify-between p-3 rounded-lg bg-secondary hover:bg-secondary/80 transition-colors text-left"
-                      >
-                        <div>
-                          <p className="font-mono font-semibold">{ticker.ticker}</p>
-                          <p className="text-sm text-muted-foreground">{ticker.name}</p>
-                        </div>
-                        <span className="text-xs text-muted-foreground bg-muted px-2 py-1 rounded">
-                          {ticker.sector}
-                        </span>
-                      </button>
-                    ))
+                    <div className="grid gap-2">
+                      {filteredAvailable.map(ticker => (
+                        <button
+                          key={ticker.ticker}
+                          onClick={() => {
+                            onAdd(ticker.ticker, ticker.name, ticker.sector);
+                            setOpen(false);
+                            setSearchQuery('');
+                          }}
+                          className="flex items-center justify-between p-3 rounded-lg bg-secondary hover:bg-secondary/80 transition-colors text-left"
+                        >
+                          <div>
+                            <p className="font-mono font-semibold">{ticker.ticker}</p>
+                            <p className="text-sm text-muted-foreground">{ticker.name}</p>
+                          </div>
+                          <span className="text-xs text-muted-foreground bg-muted px-2 py-1 rounded">
+                            {ticker.sector}
+                          </span>
+                        </button>
+                      ))}
+                      {canAddManual && (
+                        <button
+                          onClick={() => {
+                            onAdd(manualTicker, manualTicker, guessSector(manualTicker));
+                            setOpen(false);
+                            setSearchQuery('');
+                          }}
+                          className="flex items-center justify-between p-3 rounded-lg bg-secondary hover:bg-secondary/80 transition-colors text-left"
+                        >
+                          <div>
+                            <p className="font-mono font-semibold">Adicionar {manualTicker}</p>
+                            <p className="text-sm text-muted-foreground">Criar ativo com indicadores automáticos</p>
+                          </div>
+                          <span className="text-xs text-muted-foreground bg-muted px-2 py-1 rounded">
+                            {guessSector(manualTicker)}
+                          </span>
+                        </button>
+                      )}
+                    </div>
                   )}
                 </div>
               </ScrollArea>

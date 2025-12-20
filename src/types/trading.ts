@@ -10,6 +10,12 @@ export interface Asset {
   rsi: number;
   support: number;
   resistance: number;
+  /**
+   * Optional expanded levels (2+). When present, `support`/`resistance`
+   * should be treated as the primary levels (usually index 0).
+   */
+  supportLevels?: number[];
+  resistanceLevels?: number[];
   volume: number;
   avgVolume: number;
   quantity?: number;
@@ -26,4 +32,4 @@ export interface NewsAlert {
 }
 
 export type TrendStatus = 'bullish' | 'bearish' | 'neutral';
-export type ActionSuggestion = 'COMPRAR' | 'VENDER' | 'AGUARDAR' | 'STOP LOSS';
+export type ActionSuggestion = 'COMPRAR' | 'VENDER' | 'ALERTA VENDA' | 'AGUARDAR' | 'STOP LOSS' | 'PROTEGER';

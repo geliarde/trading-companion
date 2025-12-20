@@ -1,5 +1,5 @@
 import { Asset, NewsAlert } from '@/types/trading';
-import { getTrendStatus, getActionSuggestion, formatCurrency } from '@/utils/tradingUtils';
+import { getTrendStatus, getActionSuggestion, getNewsSentiment, formatCurrency } from '@/utils/tradingUtils';
 import { cn } from '@/lib/utils';
 import {
   Table,
@@ -13,17 +13,10 @@ import {
 interface SummaryTableProps {
   portfolio: Asset[];
   news: NewsAlert[];
+  protectionMode?: boolean;
 }
 
-export function SummaryTable({ portfolio, news }: SummaryTableProps) {
-  const getNewsStatus = (ticker: string) => {
-    const tickerNews = news.filter(n => n.ticker === ticker);
-    const highImpact = tickerNews.some(n => n.impact === 'high');
-    if (highImpact) return { text: '⚠️ ALERTA', className: 'text-alert' };
-    if (tickerNews.length > 0) return { text: 'Monitorando', className: 'text-neutral' };
-    return { text: 'Sem novidades', className: 'text-muted-foreground' };
-  };
-
+export function SummaryTable({ portfolio, news, protectionMode }: SummaryTableProps) {
   return (
     <div className="bg-card border border-border rounded-lg overflow-hidden">
       <div className="border-b border-border p-4">
@@ -37,27 +30,27 @@ export function SummaryTable({ portfolio, news }: SummaryTableProps) {
           <TableHeader>
             <TableRow className="hover:bg-transparent">
               <TableHead className="font-mono text-xs">ATIVO</TableHead>
+              <TableHead className="font-mono text-xs">PREÇO</TableHead>
               <TableHead className="font-mono text-xs">TENDÊNCIA (EMA)</TableHead>
-              <TableHead className="font-mono text-xs">IFR (RSI)</TableHead>
-              <TableHead className="font-mono text-xs">STATUS NOTÍCIA</TableHead>
-              <TableHead className="font-mono text-xs">AÇÃO SUGERIDA</TableHead>
+              <TableHead className="font-mono text-xs">RSI</TableHead>
+              <TableHead className="font-mono text-xs">SENTIMENTO (NOTÍCIAS)</TableHead>
+              <TableHead className="font-mono text-xs">RECOMENDAÇÃO</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {portfolio.map(asset => {
               const trend = getTrendStatus(asset);
-              const { action } = getActionSuggestion(asset);
-              const newsStatus = getNewsStatus(asset.ticker);
+              const tickerNews = news.filter(n => n.ticker === asset.ticker);
+              const sentiment = getNewsSentiment(tickerNews);
+              const { action } = getActionSuggestion(asset, { protectionMode });
 
               return (
                 <TableRow key={asset.ticker} className="hover:bg-secondary/30">
                   <TableCell className="font-mono font-semibold">
-                    <div>
-                      <p>{asset.ticker}</p>
-                      <p className="text-xs text-muted-foreground font-normal">
-                        {formatCurrency(asset.price)}
-                      </p>
-                    </div>
+                    {asset.ticker}
+                  </TableCell>
+                  <TableCell className="font-mono text-sm">
+                    {formatCurrency(asset.price)}
                   </TableCell>
                   <TableCell>
                     <span className={cn(
@@ -90,17 +83,23 @@ export function SummaryTable({ portfolio, news }: SummaryTableProps) {
                     </div>
                   </TableCell>
                   <TableCell>
-                    <span className={cn("text-sm", newsStatus.className)}>
-                      {newsStatus.text}
+                    <span className={cn(
+                      "text-sm font-mono",
+                      sentiment === 'Positivo' && "text-bull",
+                      sentiment === 'Negativo' && "text-bear",
+                      sentiment === 'Neutro' && "text-neutral",
+                      sentiment === 'Sem dados' && "text-muted-foreground"
+                    )}>
+                      {sentiment}
                     </span>
                   </TableCell>
                   <TableCell>
                     <span className={cn(
                       "font-mono font-bold text-sm",
                       action === 'COMPRAR' && "text-bull",
-                      action === 'VENDER' && "text-bear",
+                      (action === 'VENDER' || action === 'ALERTA VENDA') && "text-bear",
                       action === 'AGUARDAR' && "text-neutral",
-                      action === 'STOP LOSS' && "text-alert"
+                      (action === 'STOP LOSS' || action === 'PROTEGER') && "text-alert"
                     )}>
                       {action}
                     </span>
