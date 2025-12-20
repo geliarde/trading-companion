@@ -7,7 +7,7 @@ import { QuickStats } from '@/components/QuickStats';
 import { usePortfolio } from '@/hooks/usePortfolio';
 
 const Index = () => {
-  const { portfolio, news, addTicker, removeTicker } = usePortfolio();
+  const { portfolio, news, addTicker, removeTicker, updateQuantity } = usePortfolio();
 
   return (
     <div className="min-h-screen bg-background">
@@ -19,6 +19,7 @@ const Index = () => {
           portfolio={portfolio}
           onAdd={addTicker}
           onRemove={removeTicker}
+          onUpdateQuantity={updateQuantity}
         />
 
         {/* Quick Stats */}

@@ -33,6 +33,7 @@ export function usePortfolio() {
       resistance: Math.random() * 60 + 40,
       volume: Math.random() * 30000000 + 10000000,
       avgVolume: Math.random() * 25000000 + 8000000,
+      quantity: 0,
     };
 
     setPortfolio(prev => [...prev, newAsset]);
@@ -51,6 +52,16 @@ export function usePortfolio() {
     });
   }, [toast]);
 
+  const updateQuantity = useCallback((ticker: string, quantity: number) => {
+    setPortfolio(prev => prev.map(a => 
+      a.ticker === ticker ? { ...a, quantity } : a
+    ));
+    toast({
+      title: 'Quantidade atualizada',
+      description: `${ticker}: ${quantity} unidades.`,
+    });
+  }, [toast]);
+
   const getFilteredNews = useCallback(() => {
     const tickers = portfolio.map(a => a.ticker);
     return news.filter(n => tickers.includes(n.ticker));
@@ -61,5 +72,6 @@ export function usePortfolio() {
     news: getFilteredNews(),
     addTicker,
     removeTicker,
+    updateQuantity,
   };
 }
