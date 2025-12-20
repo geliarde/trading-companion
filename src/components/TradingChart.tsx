@@ -55,9 +55,16 @@ function generateCandleData(asset: Asset): CandleData[] {
   return data;
 }
 
-const CustomCandlestick = (props: any) => {
-  const { x, y, width, height, payload } = props;
-  if (!payload) return null;
+type CandlestickShapeProps = {
+  x?: number;
+  y?: number;
+  width?: number;
+  height?: number;
+  payload?: CandleData;
+};
+
+const CustomCandlestick = ({ x, y, width, height, payload }: CandlestickShapeProps) => {
+  if (x == null || y == null || width == null || height == null || !payload) return null;
   
   const { open, close, high, low } = payload;
   const isGreen = close >= open;
@@ -100,7 +107,7 @@ export function TradingChart({ asset }: TradingChartProps) {
   const candleData = useMemo(() => {
     if (!asset) return [];
     return generateCandleData(asset);
-  }, [asset?.ticker]);
+  }, [asset]);
 
   if (!asset) {
     return (
