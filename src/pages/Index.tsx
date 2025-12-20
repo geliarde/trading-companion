@@ -8,11 +8,19 @@ import { Sheet, SheetContent } from '@/components/ui/sheet';
 import type { Tool } from '@/components/ChartToolbar';
 import { Button } from '@/components/ui/button';
 import { Minimize2 } from 'lucide-react';
+import { MobileChartDock, type ChartIndicators } from '@/components/MobileChartDock';
 
 const Index = () => {
   const { portfolio, addTicker, removeTicker, updateQuantity } = usePortfolio();
   const [watchlistOpen, setWatchlistOpen] = useState(false);
   const [activeTool, setActiveTool] = useState<Tool>('cursor');
+  const [indicators, setIndicators] = useState<ChartIndicators>({
+    support: true,
+    resistance: true,
+    ema20: true,
+    ema200: true,
+    rsi: true,
+  });
   const [selectedTicker, setSelectedTicker] = useState<string | null>(
     portfolio.length > 0 ? portfolio[0].ticker : null
   );
@@ -115,32 +123,32 @@ const Index = () => {
             )}
 
             <div className="flex-1 min-h-0 min-w-0 flex flex-col p-2 overflow-hidden">
-              <TradingChart asset={selectedAsset} />
+              <TradingChart
+                asset={selectedAsset}
+                showSupport={indicators.support}
+                showResistance={indicators.resistance}
+                showEma20={indicators.ema20}
+                showEma200={indicators.ema200}
+                showRsi={indicators.rsi}
+              />
             </div>
           </div>
         </div>
 
-        {/* Mobile bottom toolbar */}
-        {!isFullscreen && (
-          <div className="md:hidden h-12 shrink-0">
-            <ChartToolbar
-              orientation="horizontal"
-              activeTool={activeTool}
-              onActiveToolChange={setActiveTool}
-              onFullscreen={handleToggleFullscreen}
-            />
-          </div>
-        )}
+        {/* Mobile chart dock (tabs + panel) */}
+        <MobileChartDock
+          activeTool={activeTool}
+          onActiveToolChange={setActiveTool}
+          indicators={indicators}
+          onIndicatorsChange={setIndicators}
+          onFullscreen={handleToggleFullscreen}
+          isFullscreen={isFullscreen}
+        />
 
-        {/* Fullscreen bottom quick actions (mobile/desktop) */}
+        {/* Desktop fullscreen quick actions */}
         {isFullscreen && (
-          <div className="h-12 shrink-0">
-            <ChartToolbar
-              orientation="horizontal"
-              activeTool={activeTool}
-              onActiveToolChange={setActiveTool}
-              onFullscreen={handleToggleFullscreen}
-            />
+          <div className="hidden md:block h-12 shrink-0">
+            <ChartToolbar orientation="horizontal" sections={['actions']} onFullscreen={handleToggleFullscreen} />
           </div>
         )}
       </div>

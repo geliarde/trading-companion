@@ -35,6 +35,8 @@ export type Tool =
   | 'fib'
   | 'ruler';
 
+type ToolbarSection = 'tools' | 'actions';
+
 interface ToolItem {
   id: Tool;
   icon: React.ComponentType<{ className?: string }>;
@@ -69,6 +71,7 @@ const annotationTools: ToolItem[] = [
 
 interface ChartToolbarProps {
   orientation?: 'vertical' | 'horizontal';
+  sections?: ToolbarSection[];
   activeTool?: Tool;
   onActiveToolChange?: (tool: Tool) => void;
   onZoomIn?: () => void;
@@ -80,6 +83,7 @@ interface ChartToolbarProps {
 
 export function ChartToolbar({ 
   orientation = 'vertical',
+  sections = ['tools', 'actions'],
   activeTool: activeToolProp,
   onActiveToolChange,
   onZoomIn, 
@@ -93,6 +97,8 @@ export function ChartToolbar({
   const setActiveTool = onActiveToolChange ?? setInternalActiveTool;
 
   const isHorizontal = orientation === 'horizontal';
+  const showTools = sections.includes('tools');
+  const showActions = sections.includes('actions');
 
   const toolButtonClassName = (isActive: boolean) =>
     cn(
@@ -245,26 +251,34 @@ export function ChartToolbar({
       )}
     >
       {/* Tools */}
-      {renderToolGroup(tools)}
-      <Separator orientation={isHorizontal ? 'vertical' : 'horizontal'} className={isHorizontal ? 'h-6' : 'my-1'} />
-      {renderToolGroup(drawingTools, isHorizontal ? undefined : 'Linhas')}
-      <Separator orientation={isHorizontal ? 'vertical' : 'horizontal'} className={isHorizontal ? 'h-6' : 'my-1'} />
-      {renderToolGroup(shapeTools, isHorizontal ? undefined : 'Formas')}
-      <Separator orientation={isHorizontal ? 'vertical' : 'horizontal'} className={isHorizontal ? 'h-6' : 'my-1'} />
-      {renderToolGroup(analysisTools, isHorizontal ? undefined : 'Análise')}
-      <Separator orientation={isHorizontal ? 'vertical' : 'horizontal'} className={isHorizontal ? 'h-6' : 'my-1'} />
-      {renderToolGroup(annotationTools, isHorizontal ? undefined : 'Anotação')}
+      {showTools && (
+        <>
+          {renderToolGroup(tools)}
+          <Separator orientation={isHorizontal ? 'vertical' : 'horizontal'} className={isHorizontal ? 'h-6' : 'my-1'} />
+          {renderToolGroup(drawingTools, isHorizontal ? undefined : 'Linhas')}
+          <Separator orientation={isHorizontal ? 'vertical' : 'horizontal'} className={isHorizontal ? 'h-6' : 'my-1'} />
+          {renderToolGroup(shapeTools, isHorizontal ? undefined : 'Formas')}
+          <Separator orientation={isHorizontal ? 'vertical' : 'horizontal'} className={isHorizontal ? 'h-6' : 'my-1'} />
+          {renderToolGroup(analysisTools, isHorizontal ? undefined : 'Análise')}
+          <Separator orientation={isHorizontal ? 'vertical' : 'horizontal'} className={isHorizontal ? 'h-6' : 'my-1'} />
+          {renderToolGroup(annotationTools, isHorizontal ? undefined : 'Anotação')}
+        </>
+      )}
 
       {isHorizontal ? (
         <>
-          <Separator orientation="vertical" className="h-6" />
-          <div className="flex items-center gap-1">{actionButtons}</div>
+          {showTools && showActions && <Separator orientation="vertical" className="h-6" />}
+          {showActions && <div className="flex items-center gap-1">{actionButtons}</div>}
         </>
       ) : (
         <>
           <div className="flex-1" />
-          <Separator className="my-1" />
-          <div className="flex flex-col gap-1">{actionButtons}</div>
+          {showActions && (
+            <>
+              <Separator className="my-1" />
+              <div className="flex flex-col gap-1">{actionButtons}</div>
+            </>
+          )}
         </>
       )}
     </div>

@@ -14,6 +14,11 @@ import { TrendingUp, TrendingDown, Minus } from 'lucide-react';
 
 interface TradingChartProps {
   asset: Asset | null;
+  showSupport?: boolean;
+  showResistance?: boolean;
+  showEma20?: boolean;
+  showEma200?: boolean;
+  showRsi?: boolean;
 }
 
 interface CandleData {
@@ -103,7 +108,14 @@ const CustomCandlestick = ({ x, y, width, height, payload }: CandlestickShapePro
   );
 };
 
-export function TradingChart({ asset }: TradingChartProps) {
+export function TradingChart({
+  asset,
+  showSupport = true,
+  showResistance = true,
+  showEma20 = true,
+  showEma200 = true,
+  showRsi = true,
+}: TradingChartProps) {
   const candleData = useMemo(() => {
     if (!asset) return [];
     return generateCandleData(asset);
@@ -198,9 +210,18 @@ export function TradingChart({ asset }: TradingChartProps) {
                 name.charAt(0).toUpperCase() + name.slice(1)
               ]}
             />
-            <ReferenceLine y={asset.support} stroke="hsl(0, 72%, 51%)" strokeDasharray="3 3" />
-            <ReferenceLine y={asset.resistance} stroke="hsl(142, 76%, 45%)" strokeDasharray="3 3" />
-            <ReferenceLine y={asset.ema20} stroke="hsl(199, 89%, 48%)" strokeDasharray="5 5" />
+            {showSupport && (
+              <ReferenceLine y={asset.support} stroke="hsl(0, 72%, 51%)" strokeDasharray="3 3" />
+            )}
+            {showResistance && (
+              <ReferenceLine y={asset.resistance} stroke="hsl(142, 76%, 45%)" strokeDasharray="3 3" />
+            )}
+            {showEma20 && (
+              <ReferenceLine y={asset.ema20} stroke="hsl(199, 89%, 48%)" strokeDasharray="5 5" />
+            )}
+            {showEma200 && (
+              <ReferenceLine y={asset.ema200} stroke="hsl(215, 16%, 55%)" strokeDasharray="6 6" />
+            )}
             <Bar dataKey="high" shape={<CustomCandlestick />}>
               {candleData.map((entry, index) => (
                 <Cell 
@@ -216,23 +237,33 @@ export function TradingChart({ asset }: TradingChartProps) {
       {/* Chart Footer with indicators */}
       <div className="flex items-center justify-between px-4 py-2 border-t border-border bg-secondary/30 text-xs font-mono">
         <div className="flex items-center gap-4">
-          <span className="text-muted-foreground">
-            <span className="text-accent">EMA20:</span> {asset.ema20.toFixed(2)}
-          </span>
-          <span className="text-muted-foreground">
-            <span className="text-primary">EMA200:</span> {asset.ema200.toFixed(2)}
-          </span>
-          <span className={`${asset.rsi > 70 ? 'text-bear' : asset.rsi < 30 ? 'text-bull' : 'text-muted-foreground'}`}>
-            <span className="opacity-60">RSI:</span> {asset.rsi.toFixed(1)}
-          </span>
+          {showEma20 && (
+            <span className="text-muted-foreground">
+              <span className="text-accent">EMA20:</span> {asset.ema20.toFixed(2)}
+            </span>
+          )}
+          {showEma200 && (
+            <span className="text-muted-foreground">
+              <span className="text-primary">EMA200:</span> {asset.ema200.toFixed(2)}
+            </span>
+          )}
+          {showRsi && (
+            <span className={`${asset.rsi > 70 ? 'text-bear' : asset.rsi < 30 ? 'text-bull' : 'text-muted-foreground'}`}>
+              <span className="opacity-60">RSI:</span> {asset.rsi.toFixed(1)}
+            </span>
+          )}
         </div>
         <div className="flex items-center gap-4">
-          <span className="text-bear">
-            <span className="opacity-60">Suporte:</span> {asset.support.toFixed(2)}
-          </span>
-          <span className="text-bull">
-            <span className="opacity-60">Resistência:</span> {asset.resistance.toFixed(2)}
-          </span>
+          {showSupport && (
+            <span className="text-bear">
+              <span className="opacity-60">Suporte:</span> {asset.support.toFixed(2)}
+            </span>
+          )}
+          {showResistance && (
+            <span className="text-bull">
+              <span className="opacity-60">Resistência:</span> {asset.resistance.toFixed(2)}
+            </span>
+          )}
         </div>
       </div>
     </div>
