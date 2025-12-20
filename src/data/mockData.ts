@@ -91,6 +91,7 @@ export const mockNews: NewsAlert[] = [
 ];
 
 export const availableTickers = [
+  // Ações Brasileiras
   { ticker: 'PETR4', name: 'Petrobras PN', sector: 'Petróleo & Gás' },
   { ticker: 'VALE3', name: 'Vale ON', sector: 'Mineração' },
   { ticker: 'WEGE3', name: 'WEG ON', sector: 'Industrial' },
@@ -99,4 +100,13 @@ export const availableTickers = [
   { ticker: 'ABEV3', name: 'Ambev ON', sector: 'Bebidas' },
   { ticker: 'MGLU3', name: 'Magazine Luiza ON', sector: 'Varejo' },
   { ticker: 'RENT3', name: 'Localiza ON', sector: 'Locação' },
+  // Criptomoedas
+  { ticker: 'BTC', name: 'Bitcoin', sector: 'Cripto' },
+  { ticker: 'ETH', name: 'Ethereum', sector: 'Cripto' },
+  { ticker: 'SOL', name: 'Solana', sector: 'Cripto' },
+  { ticker: 'BNB', name: 'Binance Coin', sector: 'Cripto' },
+  { ticker: 'XRP', name: 'Ripple', sector: 'Cripto' },
+  { ticker: 'ADA', name: 'Cardano', sector: 'Cripto' },
+  { ticker: 'DOGE', name: 'Dogecoin', sector: 'Cripto' },
+  { ticker: 'MATIC', name: 'Polygon', sector: 'Cripto' },
 ];
