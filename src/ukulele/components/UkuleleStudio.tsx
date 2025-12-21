@@ -95,18 +95,24 @@ export function UkuleleStudio() {
   }, [beatsPerBar, metro.lastTick?.beatIndex, metro.status]);
 
   return (
-    <div className="relative h-[100dvh] w-full overflow-hidden">
-      {/* studio background */}
+    <div className="relative h-[100dvh] w-full overflow-x-hidden overflow-y-auto">
+      {/* studio background (fixed to avoid scrolling with content) */}
       <div
-        className="absolute inset-0"
+        className="fixed inset-0"
         style={{
           background:
             "radial-gradient(1200px 700px at 20% 10%, hsl(var(--accent) / 0.20), transparent 55%), radial-gradient(900px 600px at 80% 20%, hsl(var(--success) / 0.18), transparent 60%), radial-gradient(900px 700px at 50% 110%, hsl(var(--bear) / 0.18), transparent 60%)",
         }}
       />
-      <div className="absolute inset-0 bg-gradient-to-b from-background/40 via-background/70 to-background" />
+      <div className="fixed inset-0 bg-gradient-to-b from-background/40 via-background/70 to-background" />
 
-      <div className="relative mx-auto h-full w-full max-w-5xl px-4 py-6">
+      <div
+        className="relative mx-auto min-h-[100dvh] w-full max-w-5xl px-4 sm:px-6"
+        style={{
+          paddingTop: "calc(1.25rem + env(safe-area-inset-top))",
+          paddingBottom: "calc(1.25rem + env(safe-area-inset-bottom))",
+        }}
+      >
         <div className="flex items-start justify-between gap-4">
           <div>
             <div className="flex items-center gap-2">
@@ -127,7 +133,7 @@ export function UkuleleStudio() {
           </div>
         </div>
 
-        <Tabs value={tab} onValueChange={(v) => setTab(v as typeof tab)} className="mt-6">
+        <Tabs value={tab} onValueChange={(v) => setTab(v as typeof tab)} className="mt-5 sm:mt-6">
           <TabsList className="w-full md:w-auto">
             <TabsTrigger value="tuner" className="font-mono text-xs">
               <Mic className="h-4 w-4 mr-2" />
@@ -140,7 +146,7 @@ export function UkuleleStudio() {
           </TabsList>
 
           <TabsContent value="tuner" className="mt-4">
-            <div className="grid gap-4 md:grid-cols-2">
+            <div className="grid gap-3 sm:gap-4 md:grid-cols-2">
               <Card className="card-gradient border-border shadow-[var(--shadow-card)]">
                 <CardHeader>
                   <CardTitle className="flex items-center justify-between gap-3">
@@ -187,7 +193,7 @@ export function UkuleleStudio() {
                     <div className="flex items-end justify-between gap-3">
                       <div>
                         <div className="text-xs text-muted-foreground font-mono">Nota</div>
-                        <div className="text-5xl font-semibold tracking-tight">
+                        <div className="text-4xl sm:text-5xl font-semibold tracking-tight">
                           {note ? note.name : "—"}
                           <span className="ml-2 text-lg text-muted-foreground align-top">
                             {note ? note.octave : ""}
@@ -284,7 +290,7 @@ export function UkuleleStudio() {
           </TabsContent>
 
           <TabsContent value="metronome" className="mt-4">
-            <div className="grid gap-4 md:grid-cols-2">
+            <div className="grid gap-3 sm:gap-4 md:grid-cols-2">
               <Card className="card-gradient border-border shadow-[var(--shadow-card)]">
                 <CardHeader>
                   <CardTitle className="font-mono text-sm uppercase tracking-wider">Metrônomo</CardTitle>
