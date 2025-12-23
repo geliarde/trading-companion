@@ -3,6 +3,7 @@ import { TopMenu } from '@/components/TopMenu';
 import { AssetList } from '@/components/AssetList';
 import { ChartToolbar } from '@/components/ChartToolbar';
 import { TradingChart } from '@/components/TradingChart';
+import { TechnicalAnalysisBot } from '@/components/TechnicalAnalysisBot';
 import { usePortfolio } from '@/hooks/usePortfolio';
 import { useMarketData } from '@/hooks/useMarketData';
 import { Sheet, SheetContent } from '@/components/ui/sheet';
@@ -195,10 +196,10 @@ const Index = () => {
             <div className="flex-1 min-h-0 min-w-0 flex flex-col p-2 overflow-hidden">
               {!isFullscreen && (
                 <div className="mb-2">
-              <div className="grid gap-2">
-                <DataStatusBanner health={health} />
-                  <RiskBanner macro={macro} protectionMode={protectionMode} />
-              </div>
+                  <div className="grid gap-2">
+                    <DataStatusBanner health={health} />
+                    <RiskBanner macro={macro} protectionMode={protectionMode} />
+                  </div>
                 </div>
               )}
               <TradingChart
@@ -211,6 +212,13 @@ const Index = () => {
               />
             </div>
           </div>
+
+          {/* Right Sidebar - Technical Analysis Bot (desktop) */}
+          {!isFullscreen && (
+            <div className="hidden lg:block w-72 flex-shrink-0 min-h-0 p-2 border-l border-border">
+              <TechnicalAnalysisBot asset={selectedAsset} protectionMode={protectionMode} />
+            </div>
+          )}
         </div>
 
         {/* Mobile chart dock (tabs + panel) */}
