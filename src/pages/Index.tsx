@@ -20,7 +20,6 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 
 const Index = () => {
   const { portfolio, news, addTicker, removeTicker, updateQuantity } = usePortfolio();
-  const { liveByTicker, macro, protectionMode, health } = useMarketData(portfolio, selectedTicker);
   const [watchlistOpen, setWatchlistOpen] = useState(false);
   const [activeTool, setActiveTool] = useState<Tool>('cursor');
   const [indicators, setIndicators] = useState<ChartIndicators>({
@@ -37,6 +36,8 @@ const Index = () => {
   const [chartType, setChartType] = useState('candles');
   const [isFullscreen, setIsFullscreen] = useState(false);
   const chartAreaRef = useRef<HTMLDivElement | null>(null);
+  
+  const { liveByTicker, macro, protectionMode, health } = useMarketData(portfolio, selectedTicker);
 
   const portfolioLive = useMemo(
     () => portfolio.map((a) => ({ ...a, ...(liveByTicker[a.ticker] ?? {}) })),
