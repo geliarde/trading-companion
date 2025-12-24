@@ -210,6 +210,7 @@ const Index = () => {
                 showEma20={indicators.ema20}
                 showEma200={indicators.ema200}
                 showRsi={indicators.rsi}
+                showSmartAnalysis={activeTool === 'smartAnalysis'}
               />
             </div>
           </div>

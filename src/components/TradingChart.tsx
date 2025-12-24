@@ -10,9 +10,11 @@ import {
   ResponsiveContainer,
   ReferenceLine,
   Cell,
+  Scatter,
+  LabelList,
 } from 'recharts';
 import { Asset } from '@/types/trading';
-import { TrendingUp, TrendingDown, Minus } from 'lucide-react';
+import { TrendingUp, TrendingDown } from 'lucide-react';
 
 interface TradingChartProps {
   asset: Asset | null;
@@ -22,6 +24,7 @@ interface TradingChartProps {
   showEma20?: boolean;
   showEma200?: boolean;
   showRsi?: boolean;
+  showSmartAnalysis?: boolean;
 }
 
 interface CandleData {
@@ -31,6 +34,10 @@ interface CandleData {
   low: number;
   close: number;
   volume: number;
+  entrySignal?: number;
+  takeProfitSignal?: number;
+  stopLossSignal?: number;
+  signalLabel?: string;
 }
 
 function generateCandleData(asset: Asset): CandleData[] {
@@ -78,21 +85,16 @@ const CustomCandlestick = ({ x, y, width, height, payload }: CandlestickShapePro
   const isGreen = close >= open;
   const color = isGreen ? 'hsl(142, 76%, 45%)' : 'hsl(0, 72%, 51%)';
   
-  const bodyTop = Math.min(open, close);
   const bodyBottom = Math.max(open, close);
   const priceRange = high - low;
-  const chartHeight = 300;
-  
-  const scale = chartHeight / priceRange;
-  const wickX = x + width / 2;
   
   return (
     <g>
       {/* Wick */}
       <line
-        x1={wickX}
+        x1={x + width / 2}
         y1={y}
-        x2={wickX}
+        x2={x + width / 2}
         y2={y + height}
         stroke={color}
         strokeWidth={1}
@@ -111,6 +113,57 @@ const CustomCandlestick = ({ x, y, width, height, payload }: CandlestickShapePro
   );
 };
 
+// Custom shape for entry signals (green circle)
+const EntrySignalShape = (props: any) => {
+  const { cx, cy, payload } = props;
+  if (!payload?.entrySignal) return null;
+  
+  return (
+    <g>
+      <circle cx={cx} cy={cy} r={8} fill="hsl(142, 76%, 45%)" stroke="white" strokeWidth={2} />
+      <text x={cx} y={cy - 14} textAnchor="middle" fill="hsl(142, 76%, 45%)" fontSize={10} fontWeight="bold">
+        ENTRY
+      </text>
+    </g>
+  );
+};
+
+// Custom shape for take profit signals (blue diamond)
+const TakeProfitShape = (props: any) => {
+  const { cx, cy, payload } = props;
+  if (!payload?.takeProfitSignal) return null;
+  
+  return (
+    <g>
+      <polygon 
+        points={`${cx},${cy-8} ${cx+8},${cy} ${cx},${cy+8} ${cx-8},${cy}`} 
+        fill="hsl(199, 89%, 48%)" 
+        stroke="white" 
+        strokeWidth={2} 
+      />
+      <text x={cx} y={cy - 14} textAnchor="middle" fill="hsl(199, 89%, 48%)" fontSize={10} fontWeight="bold">
+        TP
+      </text>
+    </g>
+  );
+};
+
+// Custom shape for stop loss signals (red X)
+const StopLossShape = (props: any) => {
+  const { cx, cy, payload } = props;
+  if (!payload?.stopLossSignal) return null;
+  
+  return (
+    <g>
+      <line x1={cx-6} y1={cy-6} x2={cx+6} y2={cy+6} stroke="hsl(0, 72%, 51%)" strokeWidth={3} />
+      <line x1={cx+6} y1={cy-6} x2={cx-6} y2={cy+6} stroke="hsl(0, 72%, 51%)" strokeWidth={3} />
+      <text x={cx} y={cy - 12} textAnchor="middle" fill="hsl(0, 72%, 51%)" fontSize={10} fontWeight="bold">
+        SL
+      </text>
+    </g>
+  );
+};
+
 export function TradingChart({
   asset,
   chartType = 'candles',
@@ -119,11 +172,67 @@ export function TradingChart({
   showEma20 = true,
   showEma200 = true,
   showRsi = true,
+  showSmartAnalysis = false,
 }: TradingChartProps) {
+  
+  // Generate candle data with smart analysis signals
   const candleData = useMemo(() => {
     if (!asset) return [];
-    return generateCandleData(asset);
-  }, [asset]);
+    const data = generateCandleData(asset);
+    
+    if (!showSmartAnalysis) return data;
+    
+    // Calculate smart analysis signals
+    const ema20 = asset.ema20;
+    const support = asset.support;
+    const resistance = asset.resistance;
+    
+    let hasEntrySignal = false;
+    
+    for (let i = 2; i < data.length; i++) {
+      const curr = data[i];
+      const prev = data[i - 1];
+      const prev2 = data[i - 2];
+      
+      // Entry Signal: Price bounces off support or crosses above EMA20
+      const nearSupport = Math.abs(curr.low - support) / support < 0.02;
+      const bullishReversal = prev2.close < prev.close && prev.close < curr.close;
+      const crossAboveEma = prev.close < ema20 && curr.close > ema20;
+      
+      if (!hasEntrySignal && ((nearSupport && bullishReversal) || crossAboveEma)) {
+        data[i].entrySignal = curr.close;
+        
+        // Calculate Take Profit (next resistance or +5%)
+        const takeProfit = Math.min(resistance, curr.close * 1.05);
+        // Find a candle near the take profit to mark
+        for (let j = i + 1; j < data.length; j++) {
+          if (data[j].high >= takeProfit * 0.99) {
+            data[j].takeProfitSignal = takeProfit;
+            break;
+          }
+        }
+        
+        // Calculate Stop Loss (below support or -3%)
+        const stopLoss = Math.max(support * 0.98, curr.close * 0.97);
+        data[i].stopLossSignal = stopLoss;
+        
+        hasEntrySignal = true;
+      }
+      
+      // Exit Signal: Price hits resistance or crosses below EMA20
+      if (hasEntrySignal && i > data.length - 8) {
+        const nearResistance = Math.abs(curr.high - resistance) / resistance < 0.015;
+        const crossBelowEma = prev.close > ema20 && curr.close < ema20;
+        
+        if (nearResistance || crossBelowEma) {
+          data[i].takeProfitSignal = curr.close;
+          break;
+        }
+      }
+    }
+    
+    return data;
+  }, [asset, showSmartAnalysis]);
 
   if (!asset) {
     return (
@@ -142,8 +251,14 @@ export function TradingChart({
   const priceChangePercent = (priceChange / prevCandle.close) * 100;
   const isPositive = priceChange >= 0;
 
-  const minPrice = Math.min(...candleData.map(d => d.low)) * 0.995;
-  const maxPrice = Math.max(...candleData.map(d => d.high)) * 1.005;
+  const allPrices = candleData.flatMap(d => [d.low, d.high, d.stopLossSignal, d.takeProfitSignal].filter(Boolean) as number[]);
+  const minPrice = Math.min(...allPrices) * 0.995;
+  const maxPrice = Math.max(...allPrices) * 1.005;
+
+  // Get signals for horizontal lines
+  const entrySignal = candleData.find(d => d.entrySignal);
+  const stopLossSignal = candleData.find(d => d.stopLossSignal);
+  const takeProfitSignal = candleData.find(d => d.takeProfitSignal);
 
   return (
     <div className="flex-1 flex flex-col bg-card border border-border rounded-lg overflow-hidden">
@@ -165,6 +280,11 @@ export function TradingChart({
               </span>
             </div>
           </div>
+          {showSmartAnalysis && (
+            <div className="flex items-center gap-1 px-2 py-1 rounded bg-primary/10 text-primary border border-primary/30">
+              <span className="font-mono text-xs font-semibold animate-pulse">● ANÁLISE ATIVA</span>
+            </div>
+          )}
         </div>
         
         <div className="flex items-center gap-4 text-xs font-mono">
@@ -186,7 +306,7 @@ export function TradingChart({
       {/* Chart Area */}
       <div className="flex-1 min-h-0 p-4">
         <ResponsiveContainer width="100%" height="100%" debounce={120}>
-          <ComposedChart data={candleData} margin={{ top: 10, right: 30, left: 0, bottom: 0 }}>
+          <ComposedChart data={candleData} margin={{ top: 20, right: 60, left: 0, bottom: 0 }}>
             <XAxis 
               dataKey="date" 
               axisLine={false}
@@ -214,6 +334,8 @@ export function TradingChart({
                 name.charAt(0).toUpperCase() + name.slice(1)
               ]}
             />
+            
+            {/* Support/Resistance lines */}
             {showSupport &&
               (asset.supportLevels?.length
                 ? asset.supportLevels.slice(0, 2).map((lvl, idx) => (
@@ -241,12 +363,43 @@ export function TradingChart({
                 : (
                     <ReferenceLine y={asset.resistance} stroke="hsl(142, 76%, 45%)" strokeDasharray="3 3" />
                   ))}
+            
             {showEma20 && (
               <ReferenceLine y={asset.ema20} stroke="hsl(199, 89%, 48%)" strokeDasharray="5 5" />
             )}
             {showEma200 && (
               <ReferenceLine y={asset.ema200} stroke="hsl(215, 16%, 55%)" strokeDasharray="6 6" />
             )}
+            
+            {/* Smart Analysis Lines */}
+            {showSmartAnalysis && entrySignal?.entrySignal && (
+              <ReferenceLine 
+                y={entrySignal.entrySignal} 
+                stroke="hsl(142, 76%, 45%)" 
+                strokeWidth={2}
+                label={{ value: `ENTRY R$${entrySignal.entrySignal.toFixed(2)}`, position: 'left', fill: 'hsl(142, 76%, 45%)', fontSize: 10 }}
+              />
+            )}
+            {showSmartAnalysis && stopLossSignal?.stopLossSignal && (
+              <ReferenceLine 
+                y={stopLossSignal.stopLossSignal} 
+                stroke="hsl(0, 72%, 51%)" 
+                strokeWidth={2}
+                strokeDasharray="8 4"
+                label={{ value: `STOP R$${stopLossSignal.stopLossSignal.toFixed(2)}`, position: 'left', fill: 'hsl(0, 72%, 51%)', fontSize: 10 }}
+              />
+            )}
+            {showSmartAnalysis && takeProfitSignal?.takeProfitSignal && (
+              <ReferenceLine 
+                y={takeProfitSignal.takeProfitSignal} 
+                stroke="hsl(199, 89%, 48%)" 
+                strokeWidth={2}
+                strokeDasharray="8 4"
+                label={{ value: `TP R$${takeProfitSignal.takeProfitSignal.toFixed(2)}`, position: 'left', fill: 'hsl(199, 89%, 48%)', fontSize: 10 }}
+              />
+            )}
+            
+            {/* Chart types */}
             {chartType === 'candles' && (
               <Bar dataKey="high" shape={<CustomCandlestick />}>
                 {candleData.map((entry, index) => (
@@ -285,6 +438,15 @@ export function TradingChart({
                 ))}
               </Bar>
             )}
+            
+            {/* Smart Analysis Signal Markers */}
+            {showSmartAnalysis && (
+              <>
+                <Scatter dataKey="entrySignal" shape={<EntrySignalShape />} />
+                <Scatter dataKey="takeProfitSignal" shape={<TakeProfitShape />} />
+                <Scatter dataKey="stopLossSignal" shape={<StopLossShape />} />
+              </>
+            )}
           </ComposedChart>
         </ResponsiveContainer>
       </div>
@@ -317,6 +479,11 @@ export function TradingChart({
           {showResistance && (
             <span className="text-bull">
               <span className="opacity-60">Resistência:</span> {asset.resistance.toFixed(2)}
+            </span>
+          )}
+          {showSmartAnalysis && entrySignal?.entrySignal && (
+            <span className="text-primary">
+              <span className="opacity-60">Entry:</span> {entrySignal.entrySignal.toFixed(2)}
             </span>
           )}
         </div>
