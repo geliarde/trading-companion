@@ -2,6 +2,8 @@ import { useMemo } from 'react';
 import {
   ComposedChart,
   Bar,
+  Line,
+  Area,
   XAxis,
   YAxis,
   Tooltip,
@@ -14,6 +16,7 @@ import { TrendingUp, TrendingDown, Minus } from 'lucide-react';
 
 interface TradingChartProps {
   asset: Asset | null;
+  chartType?: 'candles' | 'line' | 'area' | 'bars';
   showSupport?: boolean;
   showResistance?: boolean;
   showEma20?: boolean;
@@ -110,6 +113,7 @@ const CustomCandlestick = ({ x, y, width, height, payload }: CandlestickShapePro
 
 export function TradingChart({
   asset,
+  chartType = 'candles',
   showSupport = true,
   showResistance = true,
   showEma20 = true,
@@ -243,14 +247,44 @@ export function TradingChart({
             {showEma200 && (
               <ReferenceLine y={asset.ema200} stroke="hsl(215, 16%, 55%)" strokeDasharray="6 6" />
             )}
-            <Bar dataKey="high" shape={<CustomCandlestick />}>
-              {candleData.map((entry, index) => (
-                <Cell 
-                  key={`cell-${index}`}
-                  fill={entry.close >= entry.open ? 'hsl(142, 76%, 45%)' : 'hsl(0, 72%, 51%)'}
-                />
-              ))}
-            </Bar>
+            {chartType === 'candles' && (
+              <Bar dataKey="high" shape={<CustomCandlestick />}>
+                {candleData.map((entry, index) => (
+                  <Cell 
+                    key={`cell-${index}`}
+                    fill={entry.close >= entry.open ? 'hsl(142, 76%, 45%)' : 'hsl(0, 72%, 51%)'}
+                  />
+                ))}
+              </Bar>
+            )}
+            {chartType === 'line' && (
+              <Line 
+                type="monotone" 
+                dataKey="close" 
+                stroke="hsl(var(--primary))" 
+                strokeWidth={2}
+                dot={false}
+              />
+            )}
+            {chartType === 'area' && (
+              <Area 
+                type="monotone" 
+                dataKey="close" 
+                stroke="hsl(var(--primary))" 
+                fill="hsl(var(--primary) / 0.2)"
+                strokeWidth={2}
+              />
+            )}
+            {chartType === 'bars' && (
+              <Bar dataKey="close" fill="hsl(var(--primary))">
+                {candleData.map((entry, index) => (
+                  <Cell 
+                    key={`cell-${index}`}
+                    fill={entry.close >= entry.open ? 'hsl(142, 76%, 45%)' : 'hsl(0, 72%, 51%)'}
+                  />
+                ))}
+              </Bar>
+            )}
           </ComposedChart>
         </ResponsiveContainer>
       </div>
