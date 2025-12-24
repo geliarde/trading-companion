@@ -16,6 +16,7 @@ import {
   ZoomIn,
   ZoomOut,
   Maximize2,
+  Sparkles,
 } from 'lucide-react';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { Separator } from '@/components/ui/separator';
@@ -33,7 +34,8 @@ export type Tool =
   | 'circle'
   | 'text'
   | 'fib'
-  | 'ruler';
+  | 'ruler'
+  | 'smartAnalysis';
 
 type ToolbarSection = 'tools' | 'actions';
 
@@ -62,6 +64,7 @@ const shapeTools: ToolItem[] = [
 const analysisTools: ToolItem[] = [
   { id: 'fib', icon: Target, label: 'Fibonacci' },
   { id: 'ruler', icon: Ruler, label: 'Régua' },
+  { id: 'smartAnalysis', icon: Sparkles, label: 'Análise Inteligente' },
 ];
 
 const annotationTools: ToolItem[] = [
@@ -100,32 +103,41 @@ export function ChartToolbar({
   const showTools = sections.includes('tools');
   const showActions = sections.includes('actions');
 
-  const toolButtonClassName = (isActive: boolean) =>
+  const toolButtonClassName = (isActive: boolean, isSpecial: boolean = false) =>
     cn(
       'p-2 rounded-lg transition-all shrink-0',
-      isActive ? 'bg-primary text-primary-foreground' : 'text-muted-foreground hover:bg-secondary hover:text-foreground',
+      isActive 
+        ? isSpecial 
+          ? 'bg-gradient-to-r from-primary to-accent text-primary-foreground shadow-lg shadow-primary/30' 
+          : 'bg-primary text-primary-foreground' 
+        : isSpecial
+          ? 'text-primary hover:bg-primary/20 hover:text-primary'
+          : 'text-muted-foreground hover:bg-secondary hover:text-foreground',
     );
 
   const renderToolGroup = (toolGroup: ToolItem[], title?: string) => {
     if (isHorizontal) {
       return (
         <div className="flex items-center gap-1">
-          {toolGroup.map((tool) => (
-            <Tooltip key={tool.id}>
-              <TooltipTrigger asChild>
-                <button
-                  type="button"
-                  onClick={() => setActiveTool(tool.id)}
-                  className={toolButtonClassName(activeTool === tool.id)}
-                >
-                  <tool.icon className="h-4 w-4" />
-                </button>
-              </TooltipTrigger>
-              <TooltipContent side="top" className="font-mono text-xs">
-                {tool.label}
-              </TooltipContent>
-            </Tooltip>
-          ))}
+          {toolGroup.map((tool) => {
+            const isSpecial = tool.id === 'smartAnalysis';
+            return (
+              <Tooltip key={tool.id}>
+                <TooltipTrigger asChild>
+                  <button
+                    type="button"
+                    onClick={() => setActiveTool(tool.id)}
+                    className={toolButtonClassName(activeTool === tool.id, isSpecial)}
+                  >
+                    <tool.icon className={cn("h-4 w-4", isSpecial && activeTool === tool.id && "animate-pulse")} />
+                  </button>
+                </TooltipTrigger>
+                <TooltipContent side="top" className="font-mono text-xs">
+                  {tool.label}
+                </TooltipContent>
+              </Tooltip>
+            );
+          })}
         </div>
       );
     }
@@ -137,22 +149,25 @@ export function ChartToolbar({
             {title}
           </span>
         )}
-        {toolGroup.map((tool) => (
-          <Tooltip key={tool.id}>
-            <TooltipTrigger asChild>
-              <button
-                type="button"
-                onClick={() => setActiveTool(tool.id)}
-                className={toolButtonClassName(activeTool === tool.id)}
-              >
-                <tool.icon className="h-4 w-4" />
-              </button>
-            </TooltipTrigger>
-            <TooltipContent side="right" className="font-mono text-xs">
-              {tool.label}
-            </TooltipContent>
-          </Tooltip>
-        ))}
+        {toolGroup.map((tool) => {
+          const isSpecial = tool.id === 'smartAnalysis';
+          return (
+            <Tooltip key={tool.id}>
+              <TooltipTrigger asChild>
+                <button
+                  type="button"
+                  onClick={() => setActiveTool(tool.id)}
+                  className={toolButtonClassName(activeTool === tool.id, isSpecial)}
+                >
+                  <tool.icon className={cn("h-4 w-4", isSpecial && activeTool === tool.id && "animate-pulse")} />
+                </button>
+              </TooltipTrigger>
+              <TooltipContent side="right" className="font-mono text-xs">
+                {tool.label}
+              </TooltipContent>
+            </Tooltip>
+          );
+        })}
       </div>
     );
   };
