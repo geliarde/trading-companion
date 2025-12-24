@@ -204,6 +204,7 @@ const Index = () => {
               )}
               <TradingChart
                 asset={selectedAsset}
+                chartType={chartType as 'candles' | 'line' | 'area' | 'bars'}
                 showSupport={indicators.support}
                 showResistance={indicators.resistance}
                 showEma20={indicators.ema20}
