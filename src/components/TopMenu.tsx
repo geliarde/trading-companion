@@ -61,8 +61,8 @@ export function TopMenu({
           <Activity className="h-6 w-6 text-primary" />
         </div>
         <div className="hidden sm:block">
-          <h1 className="text-sm font-bold font-mono tracking-tight">
-            TRADING<span className="text-primary">VIEW</span>
+          <h1 className="text-sm font-bold font-mono tracking-tight text-primary">
+            TRADING
           </h1>
         </div>
       </div>
