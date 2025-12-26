@@ -133,7 +133,7 @@ const Auth = () => {
             <TrendingUp className="w-8 h-8 text-primary-foreground" />
           </div>
           <div>
-            <CardTitle className="text-2xl font-bold text-foreground">Trading Dashboard</CardTitle>
+            <CardTitle className="text-2xl font-bold text-foreground">TRADING</CardTitle>
             <CardDescription className="text-muted-foreground mt-2">
               Acesse sua conta para monitorar seus investimentos
             </CardDescription>
