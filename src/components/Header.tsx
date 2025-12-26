@@ -43,8 +43,8 @@ export function Header() {
               <div className="absolute inset-0 bg-primary/20 blur-xl rounded-full" />
             </div>
             <div>
-              <h1 className="text-xl font-bold font-mono tracking-tight">
-                TRADING<span className="text-primary">ASSISTANT</span>
+            <h1 className="text-xl font-bold font-mono tracking-tight text-primary">
+                TRADING
               </h1>
               <p className="text-xs text-muted-foreground font-mono">
                 Portfólio Ativo • B3
