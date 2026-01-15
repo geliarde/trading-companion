@@ -4,6 +4,8 @@ import { AssetList } from '@/components/AssetList';
 import { ChartToolbar } from '@/components/ChartToolbar';
 import { TradingChart } from '@/components/TradingChart';
 import { TechnicalAnalysisBot } from '@/components/TechnicalAnalysisBot';
+import { ChatAssistant } from '@/components/ChatAssistant';
+import { computeAllIndicators } from '@/engines/IndicatorsEngine';
 import { usePortfolio } from '@/hooks/usePortfolio';
 import { useMarketData } from '@/hooks/useMarketData';
 import { Sheet, SheetContent } from '@/components/ui/sheet';
@@ -215,10 +217,25 @@ const Index = () => {
             </div>
           </div>
 
-          {/* Right Sidebar - Technical Analysis Bot (desktop) */}
+          {/* Right Sidebar - Chat Assistant (desktop) */}
           {!isFullscreen && (
-            <div className="hidden lg:block w-72 flex-shrink-0 min-h-0 p-2 border-l border-border">
-              <TechnicalAnalysisBot asset={selectedAsset} protectionMode={protectionMode} />
+            <div className="hidden lg:block w-80 flex-shrink-0 min-h-0 p-2 border-l border-border">
+              <ChatAssistant 
+                ticker={selectedTicker} 
+                indicators={selectedAsset ? {
+                  ema9: selectedAsset.ema20 * 0.98,
+                  ema21: selectedAsset.ema20,
+                  ema50: (selectedAsset.ema20 + selectedAsset.ema200) / 2,
+                  ema200: selectedAsset.ema200,
+                  rsi: selectedAsset.rsi,
+                  volume: selectedAsset.volume,
+                  avgVolume: selectedAsset.avgVolume,
+                  support: selectedAsset.support,
+                  resistance: selectedAsset.resistance,
+                  price: selectedAsset.price,
+                } : null}
+                timeframe={timeframe}
+              />
             </div>
           )}
         </div>
