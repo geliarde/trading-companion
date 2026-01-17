@@ -261,7 +261,7 @@ export function TradingChart({
   const takeProfitSignal = candleData.find(d => d.takeProfitSignal);
 
   return (
-    <div className="flex-1 flex flex-col bg-card border border-border rounded-lg overflow-hidden">
+    <div className="flex-1 flex flex-col bg-card border border-border rounded-lg overflow-hidden h-full">
       {/* Chart Header */}
       <div className="flex items-center justify-between p-4 border-b border-border">
         <div className="flex items-center gap-4">
@@ -304,8 +304,8 @@ export function TradingChart({
       </div>
 
       {/* Chart Area */}
-      <div className="flex-1 min-h-0 p-4">
-        <ResponsiveContainer width="100%" height="100%" debounce={120}>
+      <div className="flex-1 min-h-[250px] p-4">
+        <ResponsiveContainer width="100%" height="100%" debounce={50}>
           <ComposedChart data={candleData} margin={{ top: 20, right: 60, left: 0, bottom: 0 }}>
             <XAxis 
               dataKey="date" 
