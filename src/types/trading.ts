@@ -19,6 +19,9 @@ export interface Asset {
   volume: number;
   avgVolume: number;
   quantity?: number;
+  // New institutional indicators
+  buyPressure?: number; // 0-100 percentage
+  institutionalFlow?: 'net_long' | 'net_short' | 'neutral';
 }
 
 export interface NewsAlert {
@@ -33,3 +36,24 @@ export interface NewsAlert {
 
 export type TrendStatus = 'bullish' | 'bearish' | 'neutral';
 export type ActionSuggestion = 'COMPRAR' | 'VENDER' | 'ALERTA VENDA' | 'AGUARDAR' | 'STOP LOSS' | 'PROTEGER';
+
+export interface ChartConfig {
+  chartType: 'candle' | 'line' | 'area' | 'bar';
+  showSMA: boolean;
+  showEMA: boolean;
+  showBollinger: boolean;
+  showVolume: boolean;
+  showGrid: boolean;
+  showAxes: boolean;
+  highLowMarkers: boolean;
+  showImbalances: boolean;
+}
+
+export interface ChartDrawing {
+  id: string;
+  type: 'line' | 'horizontal' | 'fibonacci' | 'rectangle';
+  points: { x: number; y: number }[];
+  color: string;
+}
+
+export type AppView = 'dashboard' | 'analysis' | 'news' | 'chat';

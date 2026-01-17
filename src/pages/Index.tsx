@@ -1,140 +1,178 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { TopMenu } from '@/components/TopMenu';
-import { AssetList } from '@/components/AssetList';
-import { ChartToolbar } from '@/components/ChartToolbar';
+import { AppSidebar } from '@/components/AppSidebar';
+import { AppHeader } from '@/components/AppHeader';
+import { ChartControls } from '@/components/ChartControls';
+import { InstitutionalIndicator } from '@/components/InstitutionalIndicator';
 import { TradingChart } from '@/components/TradingChart';
-import { TechnicalAnalysisBot } from '@/components/TechnicalAnalysisBot';
 import { ChatAssistant } from '@/components/ChatAssistant';
-import { computeAllIndicators } from '@/engines/IndicatorsEngine';
-import { usePortfolio } from '@/hooks/usePortfolio';
-import { useMarketData } from '@/hooks/useMarketData';
-import { Sheet, SheetContent } from '@/components/ui/sheet';
-import type { Tool } from '@/components/ChartToolbar';
-import { Button } from '@/components/ui/button';
-import { Minimize2 } from 'lucide-react';
-import { MobileChartDock, type ChartIndicators } from '@/components/MobileChartDock';
+import { AssetList } from '@/components/AssetList';
 import { RiskBanner } from '@/components/RiskBanner';
 import { DataStatusBanner } from '@/components/DataStatusBanner';
 import { SummaryTable } from '@/components/SummaryTable';
 import { NewsAlerts } from '@/components/NewsAlerts';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { usePortfolio } from '@/hooks/usePortfolio';
+import { useMarketData } from '@/hooks/useMarketData';
+import { Sheet, SheetContent } from '@/components/ui/sheet';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import type { AppView, ChartConfig } from '@/types/trading';
 
 const Index = () => {
   const { portfolio, news, addTicker, removeTicker, updateQuantity } = usePortfolio();
+  const [currentView, setCurrentView] = useState<AppView>('dashboard');
+  const [privacyMode, setPrivacyMode] = useState(false);
   const [watchlistOpen, setWatchlistOpen] = useState(false);
-  const [activeTool, setActiveTool] = useState<Tool>('cursor');
-  const [indicators, setIndicators] = useState<ChartIndicators>({
-    support: true,
-    resistance: true,
-    ema20: true,
-    ema200: true,
-    rsi: true,
-  });
   const [selectedTicker, setSelectedTicker] = useState<string | null>(
     portfolio.length > 0 ? portfolio[0].ticker : null
   );
-  const [timeframe, setTimeframe] = useState('1D');
-  const [chartType, setChartType] = useState('candles');
-  const [isFullscreen, setIsFullscreen] = useState(false);
-  const chartAreaRef = useRef<HTMLDivElement | null>(null);
   
+  const [chartConfig, setChartConfig] = useState<ChartConfig>({
+    chartType: 'candle',
+    showSMA: false,
+    showEMA: true,
+    showBollinger: true,
+    showVolume: true,
+    showGrid: true,
+    showAxes: true,
+    highLowMarkers: true,
+    showImbalances: true,
+  });
+
   const { liveByTicker, macro, protectionMode, health } = useMarketData(portfolio, selectedTicker);
 
   const portfolioLive = useMemo(
-    () => portfolio.map((a) => ({ ...a, ...(liveByTicker[a.ticker] ?? {}) })),
+    () => portfolio.map((a) => ({ 
+      ...a, 
+      ...(liveByTicker[a.ticker] ?? {}),
+      buyPressure: Math.floor(Math.random() * 40) + 30 + (a.changePercent > 0 ? 20 : 0),
+      institutionalFlow: (a.changePercent > 1 ? 'net_long' : a.changePercent < -1 ? 'net_short' : 'neutral') as 'net_long' | 'net_short' | 'neutral',
+    })),
     [liveByTicker, portfolio],
   );
 
   const selectedAsset = portfolioLive.find(a => a.ticker === selectedTicker) || null;
-  const [insightsOpen, setInsightsOpen] = useState(false);
-  const [insightsTab, setInsightsTab] = useState<'summary' | 'news' | 'risk'>('summary');
-
-  const openSummary = () => {
-    setInsightsTab('summary');
-    setInsightsOpen(true);
-  };
-
-  const openNews = () => {
-    setInsightsTab('news');
-    setInsightsOpen(true);
-  };
-
-  const riskTabContent = useMemo(() => {
-    const usd = macro['USDT/BRL'];
-    const btc = macro.BTC;
-    return (
-      <div className="grid gap-3 text-sm">
-        <div className="bg-secondary/40 border border-border rounded-lg p-3">
-          <div className="flex items-center justify-between">
-            <span className="font-mono">USDT/BRL</span>
-            <span className="font-mono">
-              {usd.price.toFixed(3)} ({usd.changePercent >= 0 ? '+' : ''}{usd.changePercent.toFixed(2)}%)
-            </span>
-          </div>
-          <p className="text-xs text-muted-foreground mt-1">
-            Se subir &gt; 1%: risco de saída de capital estrangeiro (B3).
-          </p>
-        </div>
-        <div className="bg-secondary/40 border border-border rounded-lg p-3">
-          <div className="flex items-center justify-between">
-            <span className="font-mono">BTC</span>
-            <span className="font-mono">
-              {btc.price.toFixed(0)} ({btc.changePercent >= 0 ? '+' : ''}{btc.changePercent.toFixed(2)}%)
-            </span>
-          </div>
-          <p className="text-xs text-muted-foreground mt-1">
-            Se cair &lt; -5%: ativa Modo de Proteção e sugere apertar stops.
-          </p>
-        </div>
-        <div className="bg-card border border-border rounded-lg p-3">
-          <p className="font-mono text-xs uppercase tracking-wider text-muted-foreground mb-2">Status</p>
-          <p className="text-sm">
-            {protectionMode ? (
-              <span className="text-alert font-mono font-semibold">MODO DE PROTEÇÃO ATIVO</span>
-            ) : (
-              <span className="text-muted-foreground font-mono">Normal</span>
-            )}
-          </p>
-        </div>
-      </div>
-    );
-  }, [macro, protectionMode]);
 
   useEffect(() => {
-    const handleFullscreenChange = () => setIsFullscreen(Boolean(document.fullscreenElement));
-    document.addEventListener('fullscreenchange', handleFullscreenChange);
-    return () => document.removeEventListener('fullscreenchange', handleFullscreenChange);
-  }, []);
+    if (!selectedTicker && portfolio.length > 0) {
+      setSelectedTicker(portfolio[0].ticker);
+    }
+  }, [portfolio, selectedTicker]);
 
-  const handleToggleFullscreen = async () => {
-    try {
-      if (document.fullscreenElement) {
-        await document.exitFullscreen();
-      } else {
-        await chartAreaRef.current?.requestFullscreen?.();
-      }
-    } catch {
-      // Ignore (fullscreen may be blocked by browser / device policy)
+  const renderMainContent = () => {
+    switch (currentView) {
+      case 'news':
+        return (
+          <ScrollArea className="h-full p-4">
+            <NewsAlerts news={news} />
+          </ScrollArea>
+        );
+      case 'chat':
+        return (
+          <div className="h-full p-4">
+            <ChatAssistant 
+              ticker={selectedTicker} 
+              indicators={selectedAsset ? {
+                ema9: selectedAsset.ema20 * 0.98,
+                ema21: selectedAsset.ema20,
+                ema50: (selectedAsset.ema20 + selectedAsset.ema200) / 2,
+                ema200: selectedAsset.ema200,
+                rsi: selectedAsset.rsi,
+                volume: selectedAsset.volume,
+                avgVolume: selectedAsset.avgVolume,
+                support: selectedAsset.support,
+                resistance: selectedAsset.resistance,
+                price: selectedAsset.price,
+              } : null}
+              timeframe="1D"
+            />
+          </div>
+        );
+      case 'analysis':
+      case 'dashboard':
+      default:
+        return (
+          <div className="flex-1 min-h-0 min-w-0 flex flex-col p-3 gap-3">
+            {/* Status Banners */}
+            <div className="flex flex-wrap gap-2">
+              <DataStatusBanner health={health} />
+              <RiskBanner macro={macro} protectionMode={protectionMode} />
+            </div>
+
+            {/* Chart Controls Row */}
+            <div className="flex items-center justify-between gap-4 flex-wrap">
+              <ChartControls config={chartConfig} onConfigChange={setChartConfig} />
+              {selectedAsset && (
+                <InstitutionalIndicator
+                  buyPressure={selectedAsset.buyPressure}
+                  institutionalFlow={selectedAsset.institutionalFlow}
+                />
+              )}
+            </div>
+
+            {/* Chart */}
+            <div className="flex-1 min-h-0">
+              <TradingChart
+                asset={selectedAsset}
+                chartType={chartConfig.chartType === 'candle' ? 'candles' : chartConfig.chartType === 'bar' ? 'bars' : chartConfig.chartType}
+                showSupport={true}
+                showResistance={true}
+                showEma20={chartConfig.showEMA}
+                showEma200={chartConfig.showEMA}
+                showRsi={true}
+                showSmartAnalysis={false}
+              />
+            </div>
+          </div>
+        );
     }
   };
 
   return (
     <Sheet open={watchlistOpen} onOpenChange={setWatchlistOpen}>
-      <div className="h-[100dvh] w-full min-h-0 flex flex-col bg-background overflow-hidden">
-        {/* Top Menu */}
-        {!isFullscreen && (
-          <TopMenu
-            timeframe={timeframe}
-            chartType={chartType}
-            onTimeframeChange={setTimeframe}
-            onChartTypeChange={setChartType}
-            onOpenWatchlist={() => setWatchlistOpen(true)}
-            onOpenSummary={openSummary}
-            onOpenNews={openNews}
+      <div className="h-[100dvh] w-full min-h-0 flex bg-background overflow-hidden">
+        {/* Left Sidebar - Navigation */}
+        <AppSidebar currentView={currentView} onViewChange={setCurrentView} />
+
+        {/* Main Content Area */}
+        <div className="flex-1 min-h-0 min-w-0 flex flex-col overflow-hidden">
+          {/* Header */}
+          <AppHeader
+            portfolio={portfolioLive}
+            selectedAsset={selectedAsset}
+            onSelectAsset={setSelectedTicker}
+            privacyMode={privacyMode}
+            onTogglePrivacy={() => setPrivacyMode(!privacyMode)}
           />
-        )}
+
+          {/* Content */}
+          <div className="flex-1 min-h-0 min-w-0 flex overflow-hidden">
+            {/* Main View */}
+            <div className="flex-1 min-h-0 min-w-0 flex flex-col overflow-hidden">
+              {renderMainContent()}
+            </div>
+
+            {/* Right Sidebar - Chat (visible on dashboard/analysis) */}
+            {(currentView === 'dashboard' || currentView === 'analysis') && (
+              <div className="hidden lg:block w-80 flex-shrink-0 min-h-0 p-2 border-l border-border">
+                <ChatAssistant 
+                  ticker={selectedTicker} 
+                  indicators={selectedAsset ? {
+                    ema9: selectedAsset.ema20 * 0.98,
+                    ema21: selectedAsset.ema20,
+                    ema50: (selectedAsset.ema20 + selectedAsset.ema200) / 2,
+                    ema200: selectedAsset.ema200,
+                    rsi: selectedAsset.rsi,
+                    volume: selectedAsset.volume,
+                    avgVolume: selectedAsset.avgVolume,
+                    support: selectedAsset.support,
+                    resistance: selectedAsset.resistance,
+                    price: selectedAsset.price,
+                  } : null}
+                  timeframe="1D"
+                />
+              </div>
+            )}
+          </div>
+        </div>
 
         {/* Mobile Watchlist Drawer */}
         <SheetContent side="left" className="w-[min(22rem,100vw)] p-0">
@@ -150,151 +188,6 @@ const Index = () => {
             onUpdateQuantity={updateQuantity}
           />
         </SheetContent>
-
-        {/* Main Content */}
-        <div className="flex-1 min-h-0 min-w-0 flex overflow-hidden">
-          {/* Left Sidebar - Asset List (desktop) */}
-          {!isFullscreen && (
-            <div className="hidden md:block w-56 flex-shrink-0 min-h-0">
-              <AssetList
-                portfolio={portfolioLive}
-                selectedTicker={selectedTicker}
-                onSelect={setSelectedTicker}
-                onAdd={addTicker}
-                onRemove={removeTicker}
-                onUpdateQuantity={updateQuantity}
-              />
-            </div>
-          )}
-
-          {/* Chart Toolbar (desktop) */}
-          {!isFullscreen && (
-            <div className="hidden md:flex min-h-0 overflow-hidden">
-              <ChartToolbar
-                activeTool={activeTool}
-                onActiveToolChange={setActiveTool}
-                onFullscreen={handleToggleFullscreen}
-              />
-            </div>
-          )}
-
-          {/* Main Chart Area */}
-          <div ref={chartAreaRef} className="relative flex-1 min-w-0 min-h-0 flex flex-col overflow-hidden">
-            {isFullscreen && (
-              <div className="absolute right-2 top-2 z-50">
-                <Button
-                  type="button"
-                  size="icon"
-                  variant="secondary"
-                  className="h-9 w-9 bg-card/80 backdrop-blur border border-border"
-                  onClick={handleToggleFullscreen}
-                  aria-label="Sair da tela cheia"
-                >
-                  <Minimize2 className="h-4 w-4" />
-                </Button>
-              </div>
-            )}
-
-            <div className="flex-1 min-h-0 min-w-0 flex flex-col p-2 overflow-hidden">
-              {!isFullscreen && (
-                <div className="mb-2">
-                  <div className="grid gap-2">
-                    <DataStatusBanner health={health} />
-                    <RiskBanner macro={macro} protectionMode={protectionMode} />
-                  </div>
-                </div>
-              )}
-              <TradingChart
-                asset={selectedAsset}
-                chartType={chartType as 'candles' | 'line' | 'area' | 'bars'}
-                showSupport={indicators.support}
-                showResistance={indicators.resistance}
-                showEma20={indicators.ema20}
-                showEma200={indicators.ema200}
-                showRsi={indicators.rsi}
-                showSmartAnalysis={activeTool === 'smartAnalysis'}
-              />
-            </div>
-          </div>
-
-          {/* Right Sidebar - Chat Assistant (desktop) */}
-          {!isFullscreen && (
-            <div className="hidden lg:block w-80 flex-shrink-0 min-h-0 p-2 border-l border-border">
-              <ChatAssistant 
-                ticker={selectedTicker} 
-                indicators={selectedAsset ? {
-                  ema9: selectedAsset.ema20 * 0.98,
-                  ema21: selectedAsset.ema20,
-                  ema50: (selectedAsset.ema20 + selectedAsset.ema200) / 2,
-                  ema200: selectedAsset.ema200,
-                  rsi: selectedAsset.rsi,
-                  volume: selectedAsset.volume,
-                  avgVolume: selectedAsset.avgVolume,
-                  support: selectedAsset.support,
-                  resistance: selectedAsset.resistance,
-                  price: selectedAsset.price,
-                } : null}
-                timeframe={timeframe}
-              />
-            </div>
-          )}
-        </div>
-
-        {/* Mobile chart dock (tabs + panel) */}
-        <MobileChartDock
-          activeTool={activeTool}
-          onActiveToolChange={setActiveTool}
-          indicators={indicators}
-          onIndicatorsChange={setIndicators}
-          onFullscreen={handleToggleFullscreen}
-          isFullscreen={isFullscreen}
-          onOpenSummary={openSummary}
-          onOpenNews={openNews}
-        />
-
-        {/* Desktop fullscreen quick actions */}
-        {isFullscreen && (
-          <div className="hidden md:block h-12 shrink-0">
-            <ChartToolbar orientation="horizontal" sections={['actions']} onFullscreen={handleToggleFullscreen} />
-          </div>
-        )}
-
-        <Dialog open={insightsOpen} onOpenChange={setInsightsOpen}>
-          <DialogContent className="w-[min(1100px,96vw)] max-h-[90dvh] p-0 overflow-hidden bg-card border-border">
-            <DialogHeader className="p-4 border-b border-border">
-              <DialogTitle className="font-mono text-sm uppercase tracking-wider">Painel</DialogTitle>
-            </DialogHeader>
-            <div className="p-4 pt-3 h-[calc(90dvh-56px)] min-h-0 overflow-hidden">
-              <Tabs value={insightsTab} onValueChange={(v) => setInsightsTab(v as typeof insightsTab)} className="h-full flex flex-col">
-                <TabsList className="w-full justify-start">
-                  <TabsTrigger value="summary" className="font-mono text-xs">Resumo</TabsTrigger>
-                  <TabsTrigger value="news" className="font-mono text-xs">Notícias</TabsTrigger>
-                  <TabsTrigger value="risk" className="font-mono text-xs">Risco</TabsTrigger>
-                </TabsList>
-                <div className="flex-1 min-h-0 overflow-hidden mt-3">
-                  <TabsContent value="summary" className="h-full m-0">
-                    <ScrollArea className="h-full">
-                      <SummaryTable portfolio={portfolioLive} news={news} protectionMode={protectionMode} />
-                    </ScrollArea>
-                  </TabsContent>
-                  <TabsContent value="news" className="h-full m-0">
-                    <ScrollArea className="h-full">
-                      <NewsAlerts news={news} />
-                    </ScrollArea>
-                  </TabsContent>
-                  <TabsContent value="risk" className="h-full m-0">
-                    <ScrollArea className="h-full">
-                      <div className="grid gap-3 mb-3">
-                        <DataStatusBanner health={health} />
-                      </div>
-                      {riskTabContent}
-                    </ScrollArea>
-                  </TabsContent>
-                </div>
-              </Tabs>
-            </div>
-          </DialogContent>
-        </Dialog>
       </div>
     </Sheet>
   );
